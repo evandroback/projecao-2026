@@ -5,7 +5,8 @@
 #   2) guarda uma cópia do que está no ar em /opt/projecao/backup-auto;
 #   3) instala; só reinicia o coletor se o código dele mudou.
 # Depois aplica o pedido da 1ª linha de controle.txt, se mudou. Pedidos aceitos (nada além disso):
-#   nada | ao_vivo | ensaio 2022|2026 [velocidade] [inicio] [minutos] | congelar_simulacao | teste_tse [minutos] | reconstruir_base | voltar_backup
+#   nada | ao_vivo | ensaio 2022|2026 [velocidade] [inicio] [minutos] | congelar_simulacao | gravar_simulacao [velocidade] | teste_tse [minutos] | reconstruir_base | voltar_backup
+#   gravar_simulacao: regrava a noite de 2022 à parte e monta a linha do tempo do /simulacao
 #   teste_tse: lê o TSE de verdade (1º turno) no ritmo de domingo e publica o resumo em /dados/teste_tse.json
 #   congelar_simulacao: copia os números do ensaio que está no ar para /simulacao (ficam parados lá)
 #   (para repetir o mesmo pedido, acrescente uma marca no fim, ex.: "ensaio 2022 4 -3 v2")
@@ -58,7 +59,7 @@ if [ "$NOVO" != "$ATUAL" ] && [ "$NOVO" != "$RECUSADA" ]; then
     cp "$R/site/simulacao/index.html" "$P/site/simulacao/index.html"
     cp "$R/site/estatico/modelo.js" "$P/site/estatico/modelo.js"
     cp "$R/site/estatico/mapas/br.json" "$P/site/estatico/mapas/br.json"
-    cp "$R/infra/ensaio.sh" "$R/infra/ao_vivo.sh" "$R/infra/status.sh" "$R/infra/teste_tse.sh" "$P/"
+    cp "$R/infra/ensaio.sh" "$R/infra/ao_vivo.sh" "$R/infra/status.sh" "$R/infra/teste_tse.sh" "$R/infra/gravar_simulacao.sh" "$P/"
     # o próprio atualizador: copia e renomeia (a execução atual não é afetada)
     cp "$R/infra/atualizador.sh" "$P/.atualizador.novo" && chmod +x "$P/.atualizador.novo" && mv "$P/.atualizador.novo" "$P/atualizador.sh"
     if [ $mudou_coletor = 1 ]; then $SUDO systemctl restart projecao-coletor; fi
@@ -83,6 +84,9 @@ if [ -n "$PEDIDO" ] && [ "$PEDIDO" != "$FEITO" ] && [ "$RES" = ok ]; then
   case "$verbo" in
     nada) ;;
     ao_vivo) bash "$P/ao_vivo.sh" >> "$LOG" 2>&1 ;;
+    gravar_simulacao)
+      v=${a1:-10}; [[ "$v" =~ ^[0-9]{1,2}$ ]] || v=10
+      $SUDO systemd-run --quiet --unit="projecao-gravacao-$(date +%s)" --uid=ubuntu bash "$P/gravar_simulacao.sh" "$v" >> "$LOG" 2>&1 || log "gravar_simulacao: não consegui iniciar" ;;
     teste_tse)
       m=${a1:-10}; [[ "$m" =~ ^[0-9]{1,2}$ ]] || m=10
       # roda à parte (não segura o atualizador); religa o coletor ao vivo sozinho no fim

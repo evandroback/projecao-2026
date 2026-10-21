@@ -89,6 +89,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .apurado .num { font-size: 34px; font-weight: 600; }
 .apurado small { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
 
+.tl { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; padding-block: 0 8px; }
+.tl .btn { padding: 7px 11px; }
+.tl-trilho { min-width: 0; }
+.tl input[type="range"] { width: 100%; margin: 0; accent-color: var(--amber); height: 22px; cursor: pointer; }
+.tl-marcas { position: relative; height: 14px; margin: 0 8px; font-size: 11px; color: var(--muted); }
+.tl-marcas span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.tl-passos { display: flex; align-items: center; gap: 6px; }
+.tl-passos .num { font-size: 22px; min-width: 3.6em; text-align: center; }
 .aviso { border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--amber) 16%, var(--bg)); }
 .aviso .wrap { padding-block: 9px; font-size: 13.5px; }
 .aviso b { font-weight: 600; }
@@ -280,6 +288,9 @@ footer a { color: var(--fg); }
   .ritmo .txt { font-size: 12px; }
   .apurado .num { font-size: 26px; }
   .apurado small { display: inline; font-size: 12px; margin-left: 4px; }
+  .tl { grid-template-columns: auto minmax(0, 1fr); }
+  .tl-trilho { grid-column: 1 / -1; grid-row: 1; }
+  .tl-passos { justify-content: flex-end; }
   .sec { padding-block: 24px 2px; }
   .sec-cab { grid-template-columns: minmax(0, 1fr); }
   .sec-cab h2 { font-size: 25px; }
@@ -334,6 +345,11 @@ footer a { color: var(--fg); }
     <span class="situacao" id="situacao"><i></i><span>Carregando…</span></span>
     <div class="ritmo"><span class="txt" id="ritmo-txt">—</span><div class="trilha" aria-hidden="true"><i id="ritmo-agora" style="width:0"></i><b id="ritmo-1t" style="left:0"></b></div></div>
     <div class="apurado"><span class="num" id="pct-apurado">—</span><small>das urnas apuradas</small></div>
+  </div>
+  <div class="wrap tl" id="tl" hidden>
+    <button class="btn" id="tl-play" type="button">Reproduzir</button>
+    <div class="tl-trilho"><input type="range" id="tl-r" min="0" max="0" step="1" value="0" aria-label="Momento da noite de 2022"><div class="tl-marcas" id="tl-marcas" aria-hidden="true"></div></div>
+    <div class="tl-passos"><button class="btn" id="tl-ant" type="button" aria-label="Momento anterior">‹</button><span class="num" id="tl-txt">—</span><button class="btn" id="tl-prox" type="button" aria-label="Próximo momento">›</button></div>
   </div>
 </div>
 <div class="aviso" id="aviso" hidden><div class="wrap" id="aviso-txt"></div></div>
@@ -738,10 +754,11 @@ footer a { color: var(--fg); }
       if (comUFs) await Promise.all(B.UFS.map(async uf => { const u = uf.toLowerCase(); try { RES.uf[uf] = lerTSE(await json(`${TSE_DADOS}/${u}/${u}-c0001-${E6}-u.json`, true)); } catch (e) {} }));
     } catch (e) { console.warn('TSE direto falhou', e); }
   }
+  const mapaCidades = c => new Map(c.c.map(r => [r[0], {st: r[1], ts: r[2], A: r[3], B: r[4], vv: r[5], pu: r[6] < 0 ? NaN : r[6] / 100}]));
   async function atualizarCidades() {
     try {
       const c = await json(`${DADOS}/cidades.json`, true);
-      CID = new Map(c.c.map(r => [r[0], {st: r[1], ts: r[2], A: r[3], B: r[4], vv: r[5], pu: r[6] < 0 ? NaN : r[6] / 100}]));
+      CID = mapaCidades(c);
       pintarCidade(); pintarMapaMun(); pintarListas();
     } catch (e) {}
   }
@@ -767,13 +784,13 @@ footer a { color: var(--fg); }
     $('situacao').className = 'situacao ' + cls;
     $('situacao').lastElementChild.textContent = txt;
     const av = $('aviso');
-    if (SIM) { av.hidden = false; $('aviso-txt').innerHTML = '<b>Simulação:</b> números reais do 2º turno de 2022 (Lula × Bolsonaro), com os nomes de 2026, parados no fim da noite. A apuração de verdade é no domingo, 25/10, a partir das 17h, na <a href="/">página principal</a>.'; }
+    if (SIM) { av.hidden = false; $('aviso-txt').innerHTML = `<b>Simulação:</b> números reais do 2º turno de 2022 (Lula × Bolsonaro), com os nomes de 2026${TL ? '. Use a linha do tempo acima para ver qualquer momento da noite' : ', parados no fim da noite'}. A apuração de verdade é no domingo, 25/10, a partir das 17h, na <a href="/">página principal</a>.`; }
     else if (NAC && NAC.ensaio) { av.hidden = false; $('aviso-txt').innerHTML = `<b>Ensaio:</b> estes números são de teste (${esc(NAC.ensaio)}). A apuração de verdade começa no domingo, 25/10, depois das 17h.`; }
     else if (reserva) { av.hidden = false; $('aviso-txt').innerHTML = `<b>Modo reserva:</b> o servidor da projeção não está respondendo, então o seu navegador está lendo o TSE direto. A contagem oficial continua ao vivo; a projeção mostrada é a última calculada${NAC && NAC.proj && NAC.gerado ? ' às ' + horaSP(NAC.gerado) : ''}.`; }
     else av.hidden = true;
   }
   function pintarAtualizado() {
-    if (SIM) { $('atualizado').textContent = 'parado no fim da noite'; return; }
+    if (SIM) { $('atualizado').textContent = TL ? 'momento da linha do tempo' : 'parado no fim da noite'; return; }
     if (!NAC || !(NAC.gerado || NAC.reservaHora)) return;
     const s = Math.max(0, Math.round((reserva && NAC.reservaHora ? Date.now() - NAC.reservaHora : agoraServidor() - NAC.gerado) / 1000));
     $('atualizado').textContent = `atualizado há ${s < 60 ? s + ' s' : Math.floor(s / 60) + ' min'}`;
@@ -1164,6 +1181,47 @@ footer a { color: var(--fg); }
     legenda($('leg-erro'), [['var(--amber)', '', 'Projeção', 2.8], ['var(--faint)', '4 3', 'Contagem crua do TSE', 2]]);
   }
 
+  // ---------- linha do tempo (só na simulação) ----------
+  let TL = null, tlI = 0, tlTok = 0, tlPlay = null;
+  const rotHoraTL = m => { const t = ((17 * 60 + m) % 1440 + 1440) % 1440; return `${Math.floor(t / 60)}h${String(t % 60).padStart(2, '0')}`; };
+  async function carregarMomento(i) {
+    tlI = Math.max(0, Math.min(TL.length - 1, i));
+    const mo = TL[tlI], tok = ++tlTok, base = `/simulacao/dados/m/${mo.id}`;
+    $('tl-r').value = tlI; $('tl-txt').textContent = rotHoraTL(mo.m);
+    try {
+      const [n, c, h] = await Promise.all([json(`${base}/nacional.json`), json(`${base}/cidades.json`), json(`${base}/ufs_hist.json`).catch(() => null)]);
+      if (tok !== tlTok) return;                 // já pediram outro momento
+      NAC = n; CID = mapaCidades(c); HUF = h;
+      pintarTudo(); pintarCidade(); pintarMapaMun(); pintarListas(); pintarGraficoUF();
+    } catch (e) { console.warn('momento da linha do tempo', mo.id, e); }
+  }
+  function pararTL() { tlPlay = null; $('tl-play').textContent = 'Reproduzir'; }
+  function tocarTL() {
+    if (tlI >= TL.length - 1) tlI = -1;
+    const eu = {}; tlPlay = eu; $('tl-play').textContent = 'Pausar';
+    (async () => {
+      while (tlPlay === eu && tlI < TL.length - 1) { await carregarMomento(tlI + 1); await new Promise(r => setTimeout(r, 650)); }
+      if (tlPlay === eu) pararTL();
+    })();
+  }
+  async function montarLinhaTempo() {
+    let ind = null;
+    try { ind = await json('/simulacao/dados/indice.json', true); } catch (e) { return false; }
+    if (!ind || !Array.isArray(ind.momentos) || ind.momentos.length < 2) return false;
+    TL = ind.momentos;
+    const r = $('tl-r');
+    r.max = TL.length - 1; r.value = tlI = TL.length - 1;
+    $('tl-txt').textContent = rotHoraTL(TL[tlI].m);
+    $('tl-marcas').innerHTML = TL.map((mo, i) => mo.m % 60 === 0 ? `<span style="left:${(100 * i / (TL.length - 1)).toFixed(2)}%">${rotHoraTL(mo.m).replace('h00', 'h')}</span>` : '').join('');
+    let deb = null;
+    r.addEventListener('input', () => { pararTL(); const i = +r.value; $('tl-txt').textContent = rotHoraTL(TL[i].m); clearTimeout(deb); deb = setTimeout(() => carregarMomento(i), 120); });
+    $('tl-ant').addEventListener('click', () => { pararTL(); carregarMomento(tlI - 1); });
+    $('tl-prox').addEventListener('click', () => { pararTL(); carregarMomento(tlI + 1); });
+    $('tl-play').addEventListener('click', () => { if (tlPlay) pararTL(); else tocarTL(); });
+    $('tl').hidden = false;
+    return true;
+  }
+
   // ---------- ciclo ----------
   function pintarTudo() {
     if (!B) return;
@@ -1217,6 +1275,10 @@ footer a { color: var(--fg); }
     atualizarCidades();
     atualizarHistUF();
     pintarGraficoUF();
+    if (SIM && await montarLinhaTempo()) {
+      document.querySelector('.marca p').textContent = 'O mesmo site de domingo, com a apuração real do 2º turno de 2022. Use a linha do tempo para ver qualquer momento da noite.';
+      pintarTopo();
+    }
     if (!SIM) {   // na simulação os dados estão parados: não precisa buscar de novo
       setInterval(atualizarNacional, 10000);
       setInterval(atualizarCidades, 60000);
