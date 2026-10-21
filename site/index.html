@@ -178,6 +178,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .comp .rot small { display: block; color: var(--faint); font-size: 11.5px; }
 .comp .dupla { font-family: var(--f-num); font-size: 21px; font-weight: 600; }
 .comp tr:last-child td { border-bottom: 0; }
+.comp small.votos { display: block; font: 400 12.5px var(--f-ui); color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
 .var-pos { color: var(--lula); } .var-neg { color: var(--flavio); }
 
 /* gráficos */
@@ -1072,18 +1073,31 @@ footer a { color: var(--fg); }
     const agora = c && c.st > 0 ? l2de(c.A, c.B) : NaN;
     return {m, c, agora, p: c && c.ts > 0 ? 100 * c.st / c.ts : 0, fim: c && c.st >= c.ts && c.ts > 0};
   }
+  // votos de cada cidade no 1º turno de 2026 e no 2º turno de 2022: só busca quando a seção Cidades aparece
+  let VOTOS = null, votosPedido = false;
+  async function carregarVotos() {
+    if (votosPedido) return; votosPedido = true;
+    try { VOTOS = (await json('/estatico/votos_cidades.json')).v; pintarCidade(); } catch (e) { votosPedido = false; }
+  }
+  function vigiarCidades() {
+    if (!('IntersectionObserver' in window)) return carregarVotos();
+    const ob = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { ob.disconnect(); carregarVotos(); } }, {rootMargin: '600px'});
+    ob.observe($('cidade'));
+  }
+  const votosTxt = (a, b) => a >= 0 && b >= 0 && Number.isFinite(a) && Number.isFinite(b) ? `<small class="votos"><span class="lula-c">${N0(a)}</span> × <span class="flavio-c">${N0(b)}</span> votos</small>` : '';
   function pintarCidade() {
     const {m, c, agora, p, fim} = cidadeDados(st.cidade);
+    const vt = VOTOS && VOTOS[st.cidade];
     if (!m) { $('cidade').innerHTML = ''; return; }
     const pu = c && Number.isFinite(c.pu) ? c.pu : NaN;
     $('cidade').innerHTML = `<div class="info"><h4>${esc(m.nome)} <span class="muted" style="font-size:18px">${m.uf}</span>${m.cap ? '<span class="tag">capital</span>' : ''}</h4>
       <div class="sub">${c && c.ts ? `${PA(p, 0)} das urnas apuradas (${N0(c.st)} de ${N0(c.ts)} seções)` : 'Aguardando a apuração desta cidade'}</div></div>
       <table class="comp"><tbody>
-        <tr><td class="rot">Agora, contagem do TSE<small>${fim ? 'apuração encerrada' : c && c.st ? 'parcial' : ''}</small></td><td class="dupla">${dupla(agora)}</td></tr>
+        <tr><td class="rot">Agora, contagem do TSE<small>${fim ? 'apuração encerrada' : c && c.st ? 'parcial' : ''}</small></td><td class="dupla">${dupla(agora)}${c && c.st > 0 ? votosTxt(c.A, c.B) : ''}</td></tr>
         <tr><td class="rot">Projeção da cidade</td><td class="dupla">${fim ? '<span class="muted">encerrada</span>' : dupla(pu)}</td></tr>
-        <tr><td class="rot">1º turno de 2026, resultado final</td><td class="dupla">${dupla(m.l26)}</td></tr>
+        <tr><td class="rot">1º turno de 2026, resultado final</td><td class="dupla">${dupla(m.l26)}${vt ? votosTxt(vt[0], vt[1]) : ''}</td></tr>
         <tr><td class="rot">Diferença: agora − 1º turno</td><td class="dupla">${difTxt(agora - m.l26)}</td></tr>
-        <tr><td class="rot">2º turno de 2022, resultado final<small>Lula × Bolsonaro · diferença</small></td><td class="dupla">${dupla(m.l22)} <span style="font-size:15px">${difTxt(agora - m.l22)}</span></td></tr>
+        <tr><td class="rot">2º turno de 2022, resultado final<small>Lula × Bolsonaro · diferença</small></td><td class="dupla">${dupla(m.l22)} <span style="font-size:15px">${difTxt(agora - m.l22)}</span>${vt ? votosTxt(vt[2], vt[3]) : ''}</td></tr>
       </tbody></table>`;
   }
   function montarBusca() {
@@ -1286,6 +1300,7 @@ footer a { color: var(--fg); }
     montarMapaUF();
     carregarMapaMun();
     pintarCidade();
+    vigiarCidades();
     atualizarCidades();
     atualizarHistUF();
     pintarGraficoUF();
