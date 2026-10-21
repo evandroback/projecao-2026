@@ -786,20 +786,25 @@ footer a { color: var(--fg); }
       $('f-lula').textContent = pr.sig > 0 ? `faixa ${N1(Math.max(0, pr.l2 - meia))} a ${P(Math.min(100, pr.l2 + meia))}` : 'resultado final';
       $('f-flavio').textContent = pr.sig > 0 ? `faixa ${N1(Math.max(0, 100 - pr.l2 - meia))} a ${P(Math.min(100, 100 - pr.l2 + meia))}` : 'resultado final';
       $('b-lula').style.width = pr.l2.toFixed(2) + '%'; $('b-flavio').style.width = (100 - pr.l2).toFixed(2) + '%';
-      document.title = `Lula ${N1(l)} × ${N1(100 - l)} Flávio · ${PA(100 * br.st / Math.max(br.ts, 1), 0)} apurado — Projeção 2026`;
-      $('b-inc').style.left = Math.max(0, pr.l2 - meia).toFixed(2) + '%'; $('b-inc').style.width = Math.min(100, 2 * meia).toFixed(2) + '%';
-      const lider = pr.lider === 'adv' ? 'flavio' : 'lula';
+      // matematicamente eleito: nem que todos os eleitores das urnas que faltam votassem no outro, a ordem mudaria
       const fim = br && br.ts > 0 && br.st >= br.ts;
-      const pill = fim ? [lider + ' cheia', 'Resultado: ' + NOME[pr.lider] + ' vence'] : pr.status === 'empate' ? ['empate', 'Empate técnico'] : pr.status === 'vantagem' ? [lider, 'Vantagem de ' + NOME[pr.lider]] : pr.status === 'vence' ? [lider + ' cheia', 'Projeção: ' + NOME[pr.lider] + ' vence'] : ['neutro', 'Aguardando'];
+      const faltamEleit = br ? Math.max(0, (br.te || 0) - (br.est || 0)) : NaN;
+      const decidido = !fim && br && br.st > 0 && br.te > 0 && Math.abs(br.A - br.B) > faltamEleit;
+      const eleito = br && br.A >= br.B ? 'lula' : 'adv';
+      document.title = `${fim || decidido ? NOME[eleito] + ' eleito · ' : ''}Lula ${N1(l)} × ${N1(100 - l)} Flávio · ${PA(100 * br.st / Math.max(br.ts, 1), 0)} apurado — Projeção 2026`;
+      $('b-inc').style.left = Math.max(0, pr.l2 - meia).toFixed(2) + '%'; $('b-inc').style.width = Math.min(100, 2 * meia).toFixed(2) + '%';
+      const lider = pr.lider === 'adv' ? 'flavio' : 'lula', liderEl = eleito === 'adv' ? 'flavio' : 'lula';
+      const pill = fim ? [liderEl + ' cheia', 'Resultado final: ' + NOME[eleito] + ' eleito'] : decidido ? [liderEl + ' cheia', NOME[eleito] + ' eleito'] : pr.status === 'empate' ? ['empate', 'Empate técnico'] : pr.status === 'vantagem' ? [lider, 'Vantagem de ' + NOME[pr.lider]] : pr.status === 'vence' ? [lider + ' cheia', 'Projeção: ' + NOME[pr.lider] + ' vence'] : ['neutro', 'Aguardando'];
       $('status').className = 'pill ' + pill[0]; $('status').textContent = pill[1];
       const ch = Math.max(pr.chAdv, 1 - pr.chAdv);
-      $('chance').innerHTML = pr.sig > 0 ? `Chance de vencer: <b class="${pr.lider === 'adv' ? 'flavio-c' : 'lula-c'}">${ch > .99 ? '>99' : nf(0).format(100 * ch)}%</b> ${NOME[pr.lider]} <span class="muted">(aproximada)</span>` : 'Apuração encerrada';
+      $('chance').innerHTML = decidido ? '<span class="muted">Vitória garantida pela matemática</span>' : pr.sig > 0 ? `Chance de vencer: <b class="${pr.lider === 'adv' ? 'flavio-c' : 'lula-c'}">${ch > .99 ? '>99' : nf(0).format(100 * ch)}%</b> ${NOME[pr.lider]} <span class="muted">(aproximada)</span>` : 'Apuração encerrada';
       const brPct = br && br.ts ? 100 * br.st / br.ts : 0;
       const munIdade = NAC.saude && NAC.saude.munAtualizado ? agoraServidor() - NAC.saude.munAtualizado : 0;
       const atrasada = !reserva && pr.sig > 0 && (brPct - pr.pct > 5 || munIdade > 180000);
       $('nota-proj').innerHTML = reserva ? `<b>Projeção parada${NAC.gerado ? ' desde ' + horaSP(NAC.gerado) : ''}:</b> o servidor da projeção não está conseguindo ler o TSE. A contagem oficial ao lado continua ao vivo.`
         : atrasada ? `<b>Atenção:</b> a projeção está atrasada em relação à contagem (usa ${P(pr.pct)} das urnas; o TSE já mostra ${P(brPct)}).`
         : fim ? `Todas as urnas apuradas. Resultado do TSE: ${dupla(l2de(br.A, br.B))}.`
+        : decidido ? `<b>${NOME[eleito]} está matematicamente eleito:</b> mesmo que todos os ${N0(faltamEleit)} eleitores das urnas que faltam votassem em ${NOME[eleito === 'adv' ? 'lula' : 'adv']}, não daria. O TSE mostra agora ${dupla(l2de(br.A, br.B))}.`
         : `O TSE mostra agora ${dupla(l2de(br.A, br.B))}. A projeção corrige pelos votos que ainda faltam em cada cidade.`;
     } else {
       $('p-lula').textContent = $('p-flavio').textContent = '–';
@@ -867,7 +872,8 @@ footer a { color: var(--fg); }
       const espL = Number.isFinite(pr.faltaL) ? pr.faltaL : (pr.l2 / 100 * (A + Bv + R) - A) / R, esperado = A < Bv ? espL : 1 - espL;
       const qtd = R >= 1e6 ? `${nf(1).format(R / 1e6)} milhões` : `${nf(0).format(Math.round(R / 1e3))} mil`;
       $('faltam').innerHTML = `Faltam cerca de <span class="num">${qtd}</span> de votos válidos`;
-      $('faltam-nota').innerHTML = precisa > 1 ? `${atras}, atrás na contagem do TSE, já não alcança o líder.` : `Para empatar, <b>${atras}</b>, que está atrás na contagem do TSE, precisa de <b>${P(100 * precisa)}</b> desses votos. A projeção espera que ele receba <b>${P(100 * Math.min(1, Math.max(0, esperado)))}</b>.`;
+      const garantido = Math.abs(A - Bv) > Math.max(0, br.te - br.est);
+      $('faltam-nota').innerHTML = garantido ? `Nem com todos os eleitores das urnas que faltam ${atras} alcançaria o líder.` : precisa > 1 ? `Pela estimativa, ${atras} já não alcança o líder. A vitória fica garantida quando nem todos os eleitores que faltam bastarem.` : `Para empatar, <b>${atras}</b>, que está atrás na contagem do TSE, precisa de <b>${P(100 * precisa)}</b> desses votos. A projeção espera que ele receba <b>${P(100 * Math.min(1, Math.max(0, esperado)))}</b>.`;
     } else { $('faltam').textContent = tem && br.st >= br.ts ? 'Apuração encerrada' : '—'; $('faltam-nota').textContent = tem && br.st >= br.ts ? 'Todas as seções foram totalizadas.' : 'Aparece com a primeira parcial da projeção.'; }
   }
 
