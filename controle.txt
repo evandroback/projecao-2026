@@ -1,1 +1,1 @@
-gravar_simulacao 10
+gerar_votos
