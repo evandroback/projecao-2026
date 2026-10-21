@@ -1,0 +1,10 @@
+[Unit]
+Description=Projeção 2026 — instala atualizações publicadas em github.com/evandroback/projecao-2026
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/opt/projecao/atualizador.sh
+TimeoutStartSec=900

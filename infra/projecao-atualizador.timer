@@ -1,0 +1,10 @@
+[Unit]
+Description=Projeção 2026 — confere o GitHub a cada minuto (desliga sozinho depois de 27/10/2026)
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

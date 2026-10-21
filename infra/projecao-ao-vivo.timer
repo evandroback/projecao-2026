@@ -1,0 +1,9 @@
+[Unit]
+Description=Projeção 2026 — às 8h de domingo, 25/10, volta para o modo AO VIVO se um ensaio tiver ficado ligado
+
+[Timer]
+OnCalendar=2026-10-25 08:00:00 America/Sao_Paulo
+Persistent=true
+
+[Install]
+WantedBy=timers.target

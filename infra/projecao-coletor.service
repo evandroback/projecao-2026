@@ -1,0 +1,15 @@
+[Unit]
+Description=Projeção da apuração 2026 — coletor do TSE
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/projecao/app
+EnvironmentFile=/opt/projecao/coletor.env
+ExecStart=/usr/bin/node --max-old-space-size=512 /opt/projecao/app/coletor.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

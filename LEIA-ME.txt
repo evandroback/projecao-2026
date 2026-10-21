@@ -1,0 +1,31 @@
+PROJEÇÃO DA APURAÇÃO 2026 — como funciona e como mexer
+=======================================================
+
+O que roda na VM da Oracle (64.181.167.66)
+  - projecao-coletor : lê o TSE (Brasil a cada 8 s, estados a cada 20 s, cidades em fila com
+                       limite de 40 pedidos/s), calcula a projeção e grava /opt/projecao/saida/*.json
+  - caddy            : o site (https://NOME e http://IP), serve /opt/projecao/site e /dados/
+  - projecao-ensaio  : só nos ensaios; finge ser o TSE reprisando uma eleição real
+
+Comandos (dentro da VM)
+  /opt/projecao/status.sh            situação: serviços, % apurado, projeção, erros
+  /opt/projecao/ensaio.sh 2022 4     ensaio com o 2º turno de 2022, 4x mais rápido
+  /opt/projecao/ensaio.sh 2026 4     ensaio com o 1º turno de 2026 (só Lula e Flávio)
+  /opt/projecao/ao_vivo.sh           volta para o TSE de verdade (FAZER ANTES DE DOMINGO)
+                                     (seguro extra: domingo 25/10 às 8h a VM faz isso sozinha
+                                      se um ensaio tiver ficado ligado — systemctl list-timers)
+  sudo journalctl -u projecao-coletor -f     acompanhar o coletor ao vivo (Ctrl+C sai)
+
+Pastas
+  /opt/projecao/app      código (coletor.js, modelo.js...)
+  /opt/projecao/site     site (index.html, simulacao/, estatico/)
+  /opt/projecao/base     referências calculadas dos dados abertos do TSE (1º turno 2026, 2022)
+  /opt/projecao/brutos   zips baixados do TSE (≈850 MB)
+  /opt/projecao/saida    números ao vivo publicados no site (/dados/)
+  /opt/projecao/estado   histórico da noite e "cravou" (sobrevive a reinício)
+
+Se algo der errado no domingo
+  - O site tem modo reserva: se o coletor parar ou o TSE bloquear a VM, cada navegador passa a ler
+    a contagem oficial direto do TSE. A projeção fica parada no último valor, com aviso.
+  - Reiniciar o coletor não perde a noite: sudo systemctl restart projecao-coletor
+  - Teste do modo reserva com o 1º turno: abra  https://NOME/?ele=6257&reserva=1

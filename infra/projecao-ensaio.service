@@ -1,0 +1,11 @@
+[Unit]
+Description=Projeção da apuração 2026 — servidor de ENSAIO (reprise de uma eleição real)
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/projecao/app
+EnvironmentFile=/opt/projecao/ensaio.env
+ExecStart=/usr/bin/node /opt/projecao/app/replay.js --secoes ${SECOES} --porta 8081 --velocidade ${VELOCIDADE} --inicio ${INICIO}
+Restart=on-failure
+RestartSec=5

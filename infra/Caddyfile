@@ -1,0 +1,47 @@
+# Projeção da Apuração 2026 — servidor web (Caddy)
+# Duas entradas com cadeado para o mesmo site (http:// redireciona sozinho para https://):
+#   https://NOME_DO_SITE      certificado normal (Let's Encrypt)
+#   https://IP_DO_SITE        certificado de IP (Let's Encrypt, perfil "shortlived", renovado sozinho)
+{
+	# navegadores não mandam o nome (SNI) quando o endereço é um IP: usa o certificado do IP
+	default_sni IP_DO_SITE
+}
+
+(projecao) {
+	encode zstd gzip
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+	# números ao vivo, gravados pelo coletor a cada poucos segundos
+	handle_path /dados/* {
+		root * /opt/projecao/saida
+		header Cache-Control "no-cache"
+		header Access-Control-Allow-Origin "*"
+		file_server
+	}
+	handle {
+		root * /opt/projecao/site
+		@paginas path / /index.html /simulacao /simulacao/ /simulacao/index.html
+		header @paginas Cache-Control "no-cache"
+		@estatico path /estatico/*
+		header @estatico Cache-Control "public, max-age=300"
+		try_files {path} {path}/index.html
+		file_server
+	}
+}
+
+NOME_DO_SITE {
+	import projecao
+}
+
+IP_DO_SITE {
+	tls {
+		issuer acme {
+			profile shortlived
+		}
+	}
+	import projecao
+}

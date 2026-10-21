@@ -1,0 +1,7 @@
+[Unit]
+Description=Projeção 2026 — garante o modo AO VIVO no domingo da eleição (desliga ensaio esquecido)
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/bin/bash -c 'if grep -q "^ENSAIO=." /opt/projecao/coletor.env; then /opt/projecao/ao_vivo.sh; else echo "já estava ao vivo"; fi'
