@@ -146,7 +146,9 @@
     const lider = m2 > 0 ? 'adv' : 'lula';
     const ch = Math.max(chAdv, 1 - chAdv);
     let status = 'aguardando';
-    if (pronto) status = (Math.abs(m2) < 1.5 || ch < 0.9) ? 'empate' : ch < 0.99 ? 'vantagem' : 'vence';
+    // "Empate técnico" = chance do líder abaixo de 90%. Até 21/10 também valia "diferença menor que 1,5 ponto",
+    // mas no ensaio de 2022 isso pôs "Empate técnico" ao lado de 99% de chance (18h42–18h52).
+    if (pronto) status = ch < 0.9 ? 'empate' : ch < 0.99 ? 'vantagem' : 'vence';
     return {sig, m2, chAdv, lider, ch, pronto, status};
   }
 
