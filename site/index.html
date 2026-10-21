@@ -535,7 +535,7 @@ footer a { color: var(--fg); }
           <p>A contagem do TSE não chega por igual: algumas regiões terminam antes de outras. Por isso o número cru engana no começo da noite.</p>
           <p>A projeção compara cada cidade com o resultado dela no 1º turno, estima quanto cada lado ganhou ou perdeu ali e aplica essa mudança aos votos que ainda faltam. Cidades com poucos votos apurados puxam a estimativa do estado e da região.</p>
           <p>Não é pesquisa. Usa só os resultados oficiais divulgados pelo TSE. A faixa e a chance são aproximadas: foram calibradas com só três eleições de teste.</p>
-          <p><a href="/simulacao">Veja a simulação com a eleição de 2022</a> para entender como o site se comporta durante a noite.</p>
+          <p id="p-sim"><a href="/simulacao">Veja a simulação com a eleição de 2022</a> para entender como o site se comporta durante a noite.</p>
         </article>
       </div>
     </div>
@@ -694,6 +694,9 @@ footer a { color: var(--fg); }
   const TSE_DADOS = `https://resultados.tse.jus.br/oficial/ele2026/${ELE}/dados`;
   const E6 = 'e00' + ELE;
   const FORCAR_RESERVA = PARAM.get('reserva') === '1';
+  // /simulacao usa esta mesma página com os dados do ensaio de 2022 congelados no fim da noite
+  const SIM = location.pathname.startsWith('/simulacao');
+  const DADOS = SIM ? '/simulacao/dados' : '/dados';
   const lerTSE = j => {
     const s = j.s || {}, e = j.e || {}, v = j.v || {};
     const r = {ts: +s.ts || 0, st: +s.st || 0, te: +e.te || 0, est: +e.est || 0, c: +e.c || 0, a: +e.a || 0, vv: +v.vv || 0, vb: +v.vb || 0, tvn: +v.tvn || 0, A: 0, B: 0, hg: j.hg};
@@ -706,7 +709,7 @@ footer a { color: var(--fg); }
   async function atualizarNacional() {
     let motivo = FORCAR_RESERVA ? 'forçado no endereço' : '';
     try {
-      const n = await json('/dados/nacional.json', true);
+      const n = await json(`${DADOS}/nacional.json`, true);
       NAC = n; falhas = 0;
       const idade = agoraServidor() - n.gerado;          // o coletor grava a cada ~8 s
       const tseIdade = n.saude && n.saude.ultimoOk ? agoraServidor() - n.saude.ultimoOk : 0;
@@ -718,7 +721,7 @@ footer a { color: var(--fg); }
       falhas++;
       if (falhas >= 2) motivo = motivo || 'coletor fora do ar';
     }
-    if (motivo && (FORCAR_RESERVA || !(NAC && NAC.ensaio))) {
+    if (motivo && !SIM && (FORCAR_RESERVA || !(NAC && NAC.ensaio))) {
       if (!reserva) console.warn('modo reserva:', motivo);
       reserva = true;
       // o Brasil a cada volta (10 s); os estados a cada 3 voltas (30 s)
@@ -737,13 +740,13 @@ footer a { color: var(--fg); }
   }
   async function atualizarCidades() {
     try {
-      const c = await json('/dados/cidades.json', true);
+      const c = await json(`${DADOS}/cidades.json`, true);
       CID = new Map(c.c.map(r => [r[0], {st: r[1], ts: r[2], A: r[3], B: r[4], vv: r[5], pu: r[6] < 0 ? NaN : r[6] / 100}]));
       pintarCidade(); pintarMapaMun(); pintarListas();
     } catch (e) {}
   }
   async function atualizarHistUF() {
-    try { HUF = await json('/dados/ufs_hist.json', true); pintarGraficoUF(); } catch (e) {}
+    try { HUF = await json(`${DADOS}/ufs_hist.json`, true); pintarGraficoUF(); } catch (e) {}
   }
 
   // ---------- topo ----------
@@ -757,18 +760,20 @@ footer a { color: var(--fg); }
     const hora = NAC && NAC.ensaio && NAC.tse && NAC.tse.hg ? NAC.tse.hg.slice(0, 5) : horaSP(agoraServidor());
     $('ritmo-txt').innerHTML = m >= 0 ? `Às ${esc(hora)} do 1º turno, ${P(p1)} das urnas estavam apuradas.` : `Começa domingo, 25/10, às 17h (Brasília). No 1º turno, às 18h, ${P(100 * B.curvas.nacMin[60][0] / B.curvas.N)} das urnas estavam apuradas.`;
     let cls = 'vivo', txt = 'Ao vivo';
-    if (NAC && NAC.ensaio) { cls = 'ensaio'; txt = 'Ensaio'; }
+    if (NAC && NAC.ensaio) { cls = 'ensaio'; txt = SIM ? 'Simulação' : 'Ensaio'; }
     else if (reserva) { cls = 'reserva'; txt = 'Modo reserva'; }
     else if (!br || br.st === 0) { cls = ''; txt = 'Aguardando a apuração'; }
     else if (NAC && NAC.status === 'atrasado') { cls = 'atraso'; txt = 'TSE demorando'; }
     $('situacao').className = 'situacao ' + cls;
     $('situacao').lastElementChild.textContent = txt;
     const av = $('aviso');
-    if (NAC && NAC.ensaio) { av.hidden = false; $('aviso-txt').innerHTML = `<b>Ensaio:</b> estes números são de teste (${esc(NAC.ensaio)}). A apuração de verdade começa no domingo, 25/10, depois das 17h.`; }
+    if (SIM) { av.hidden = false; $('aviso-txt').innerHTML = '<b>Simulação:</b> números reais do 2º turno de 2022 (Lula × Bolsonaro), com os nomes de 2026, parados no fim da noite. A apuração de verdade é no domingo, 25/10, a partir das 17h, na <a href="/">página principal</a>.'; }
+    else if (NAC && NAC.ensaio) { av.hidden = false; $('aviso-txt').innerHTML = `<b>Ensaio:</b> estes números são de teste (${esc(NAC.ensaio)}). A apuração de verdade começa no domingo, 25/10, depois das 17h.`; }
     else if (reserva) { av.hidden = false; $('aviso-txt').innerHTML = `<b>Modo reserva:</b> o servidor da projeção não está respondendo, então o seu navegador está lendo o TSE direto. A contagem oficial continua ao vivo; a projeção mostrada é a última calculada${NAC && NAC.proj && NAC.gerado ? ' às ' + horaSP(NAC.gerado) : ''}.`; }
     else av.hidden = true;
   }
   function pintarAtualizado() {
+    if (SIM) { $('atualizado').textContent = 'parado no fim da noite'; return; }
     if (!NAC || !(NAC.gerado || NAC.reservaHora)) return;
     const s = Math.max(0, Math.round((reserva && NAC.reservaHora ? Date.now() - NAC.reservaHora : agoraServidor() - NAC.gerado) / 1000));
     $('atualizado').textContent = `atualizado há ${s < 60 ? s + ' s' : Math.floor(s / 60) + ' min'}`;
@@ -791,7 +796,7 @@ footer a { color: var(--fg); }
       const faltamEleit = br ? Math.max(0, (br.te || 0) - (br.est || 0)) : NaN;
       const decidido = !fim && br && br.st > 0 && br.te > 0 && Math.abs(br.A - br.B) > faltamEleit;
       const eleito = br && br.A >= br.B ? 'lula' : 'adv';
-      document.title = `${fim || decidido ? NOME[eleito] + ' eleito · ' : ''}Lula ${N1(l)} × ${N1(100 - l)} Flávio · ${PA(100 * br.st / Math.max(br.ts, 1), 0)} apurado — Projeção 2026`;
+      document.title = `${SIM ? 'Simulação 2022 · ' : ''}${fim || decidido ? NOME[eleito] + ' eleito · ' : ''}Lula ${N1(l)} × ${N1(100 - l)} Flávio · ${PA(100 * br.st / Math.max(br.ts, 1), 0)} apurado — Projeção 2026`;
       $('b-inc').style.left = Math.max(0, pr.l2 - meia).toFixed(2) + '%'; $('b-inc').style.width = Math.min(100, 2 * meia).toFixed(2) + '%';
       const lider = pr.lider === 'adv' ? 'flavio' : 'lula', liderEl = eleito === 'adv' ? 'flavio' : 'lula';
       const pill = fim ? [liderEl + ' cheia', 'Resultado final: ' + NOME[eleito] + ' eleito'] : decidido ? [liderEl + ' cheia', NOME[eleito] + ' eleito'] : pr.status === 'empate' ? ['empate', 'Empate técnico'] : pr.status === 'vantagem' ? [lider, 'Vantagem de ' + NOME[pr.lider]] : pr.status === 'vence' ? [lider + ' cheia', 'Projeção: ' + NOME[pr.lider] + ' vence'] : ['neutro', 'Aguardando'];
@@ -1197,6 +1202,12 @@ footer a { color: var(--fg); }
       MUN.set(m.cod, m);
       LISTA_BUSCA.push(Object.assign({chave: semAcento(m.nome)}, m));
     }
+    if (SIM) {
+      document.querySelector('.marca h1').textContent = 'Simulação com a apuração de 2022';
+      document.querySelector('.marca p').textContent = 'O mesmo site de domingo, rodando com a apuração real do 2º turno de 2022 e parado no fim da noite. Os gráficos mostram a noite inteira.';
+      const bt = document.querySelector('.acoes a.btn'); bt.href = '/'; bt.textContent = 'Ir para o site de domingo';
+      $('p-sim').hidden = true;
+    }
     ligarControles();
     montarBusca();
     await atualizarNacional();
@@ -1206,9 +1217,11 @@ footer a { color: var(--fg); }
     atualizarCidades();
     atualizarHistUF();
     pintarGraficoUF();
-    setInterval(atualizarNacional, 10000);
-    setInterval(atualizarCidades, 60000);
-    setInterval(atualizarHistUF, 60000);
+    if (!SIM) {   // na simulação os dados estão parados: não precisa buscar de novo
+      setInterval(atualizarNacional, 10000);
+      setInterval(atualizarCidades, 60000);
+      setInterval(atualizarHistUF, 60000);
+    }
     setInterval(pintarAtualizado, 1000);
   })().catch(e => { console.error(e); $('situacao').lastElementChild.textContent = 'Erro ao carregar'; });
 })();

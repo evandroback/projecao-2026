@@ -5,7 +5,8 @@
 #   2) guarda uma cópia do que está no ar em /opt/projecao/backup-auto;
 #   3) instala; só reinicia o coletor se o código dele mudou.
 # Depois aplica o pedido da 1ª linha de controle.txt, se mudou. Pedidos aceitos (nada além disso):
-#   nada | ao_vivo | ensaio 2022|2026 [velocidade] [inicio] | reconstruir_base | voltar_backup
+#   nada | ao_vivo | ensaio 2022|2026 [velocidade] [inicio] [minutos] | congelar_simulacao | reconstruir_base | voltar_backup
+#   congelar_simulacao: copia os números do ensaio que está no ar para /simulacao (ficam parados lá)
 #   (para repetir o mesmo pedido, acrescente uma marca no fim, ex.: "ensaio 2022 4 -3 v2")
 # Publica a situação em /dados/atualizador.json.
 # Desligar: sudo systemctl disable --now projecao-atualizador.timer   (desliga sozinho depois de 27/10/2026)
@@ -81,6 +82,11 @@ if [ -n "$PEDIDO" ] && [ "$PEDIDO" != "$FEITO" ] && [ "$RES" = ok ]; then
   case "$verbo" in
     nada) ;;
     ao_vivo) bash "$P/ao_vivo.sh" >> "$LOG" 2>&1 ;;
+    congelar_simulacao)
+      if [ -s "$P/saida/nacional.json" ] && grep -q '"ensaio":"' "$P/saida/nacional.json"; then
+        mkdir -p "$P/site/simulacao/dados.novo" && cp "$P"/saida/nacional.json "$P"/saida/cidades.json "$P"/saida/ufs_hist.json "$P/site/simulacao/dados.novo/" \
+          && rm -rf "$P/site/simulacao/dados" && mv "$P/site/simulacao/dados.novo" "$P/site/simulacao/dados" && log "simulação congelada"
+      else log "congelar_simulacao: não há ensaio no ar; nada foi copiado"; fi ;;
     ensaio)
       case "${a1:-}" in
         2022|2026) bash "$P/ensaio.sh" "$a1" "$a2" "$a3" >> "$LOG" 2>&1 ;;
