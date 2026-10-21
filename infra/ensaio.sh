@@ -30,4 +30,9 @@ rm -f $P/estado/*ensaio* $P/saida/*.json
 sudo systemctl restart projecao-ensaio
 sleep 2
 sudo systemctl start projecao-coletor
-echo "Ensaio ligado: $NOME. Acompanhe com /opt/projecao/status.sh"
+# volta sozinho para o modo ao vivo depois de DURACAO minutos (padrão 120), mesmo que ninguém lembre
+DUR=${DURACAO:-120}
+sudo systemctl stop projecao-volta-ao-vivo.timer 2>/dev/null || true
+sudo systemctl reset-failed projecao-volta-ao-vivo.service 2>/dev/null || true
+sudo systemd-run --quiet --unit=projecao-volta-ao-vivo --uid=ubuntu --on-active="${DUR}m" /opt/projecao/ao_vivo.sh
+echo "Ensaio ligado: $NOME. Volta sozinho ao modo ao vivo em ${DUR} minutos. Acompanhe com /opt/projecao/status.sh"

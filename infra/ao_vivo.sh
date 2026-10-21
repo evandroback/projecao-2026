@@ -17,6 +17,7 @@ CONCORRENCIA=12
 ACELERAR=1
 EOF
 [ "${1:-}" = "--so-config" ] && exit 0
+sudo systemctl stop projecao-volta-ao-vivo.timer 2>/dev/null || true   # cancela a volta automática agendada pelo ensaio
 sudo systemctl stop projecao-coletor
 sudo systemctl stop projecao-ensaio 2>/dev/null || true
 rm -f $P/estado/*ensaio* $P/saida/*.json
