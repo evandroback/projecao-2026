@@ -6,6 +6,9 @@ O que roda na VM da Oracle (64.181.167.66)
                        limite de 40 pedidos/s), calcula a projeção e grava /opt/projecao/saida/*.json
   - caddy            : o site (https://NOME e http://IP), serve /opt/projecao/site e /dados/
   - projecao-ensaio  : só nos ensaios; finge ser o TSE reprisando uma eleição real
+  - projecao-atualizador (a cada minuto): busca versões novas em github.com/evandroback/projecao-2026,
+                       testa antes de instalar e aplica o pedido de controle.txt; situação em /dados/atualizador.json;
+                       desliga sozinho depois de 27/10/2026
 
 Comandos (dentro da VM)
   /opt/projecao/status.sh            situação: serviços, % apurado, projeção, erros
