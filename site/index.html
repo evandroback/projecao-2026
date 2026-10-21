@@ -288,9 +288,10 @@ footer a { color: var(--fg); }
   .ritmo .txt { font-size: 12px; }
   .apurado .num { font-size: 26px; }
   .apurado small { display: inline; font-size: 12px; margin-left: 4px; }
-  .tl { grid-template-columns: auto minmax(0, 1fr); }
-  .tl-trilho { grid-column: 1 / -1; grid-row: 1; }
-  .tl-passos { justify-content: flex-end; }
+  .tl { gap: 6px 10px; padding-bottom: 6px; }
+  .tl .btn { padding: 6px 10px; }
+  .tl-passos .btn { display: none; }            /* no celular, arrastar o controle basta */
+  .tl-passos .num { font-size: 18px; min-width: 3.2em; }
   .sec { padding-block: 24px 2px; }
   .sec-cab { grid-template-columns: minmax(0, 1fr); }
   .sec-cab h2 { font-size: 25px; }
@@ -347,7 +348,7 @@ footer a { color: var(--fg); }
     <div class="apurado"><span class="num" id="pct-apurado">—</span><small>das urnas apuradas</small></div>
   </div>
   <div class="wrap tl" id="tl" hidden>
-    <button class="btn" id="tl-play" type="button">Reproduzir</button>
+    <button class="btn" id="tl-play" type="button" aria-label="Reproduzir a noite"><span class="longo">Reproduzir</span><span class="curto" aria-hidden="true">▶</span></button>
     <div class="tl-trilho"><input type="range" id="tl-r" min="0" max="0" step="1" value="0" aria-label="Momento da noite de 2022"><div class="tl-marcas" id="tl-marcas" aria-hidden="true"></div></div>
     <div class="tl-passos"><button class="btn" id="tl-ant" type="button" aria-label="Momento anterior">‹</button><span class="num" id="tl-txt">—</span><button class="btn" id="tl-prox" type="button" aria-label="Próximo momento">›</button></div>
   </div>
@@ -821,7 +822,7 @@ footer a { color: var(--fg); }
       const ch = Math.max(pr.chAdv, 1 - pr.chAdv);
       $('chance').innerHTML = decidido ? '<span class="muted">Vitória garantida pela matemática</span>' : pr.sig > 0 ? `Chance de vencer: <b class="${pr.lider === 'adv' ? 'flavio-c' : 'lula-c'}">${ch > .99 ? '>99' : nf(0).format(100 * ch)}%</b> ${NOME[pr.lider]} <span class="muted">(aproximada)</span>` : 'Apuração encerrada';
       const brPct = br && br.ts ? 100 * br.st / br.ts : 0;
-      const munIdade = NAC.saude && NAC.saude.munAtualizado ? agoraServidor() - NAC.saude.munAtualizado : 0;
+      const munIdade = !SIM && NAC.saude && NAC.saude.munAtualizado ? agoraServidor() - NAC.saude.munAtualizado : 0;   // na simulação os arquivos são antigos de propósito
       const atrasada = !reserva && pr.sig > 0 && (brPct - pr.pct > 5 || munIdade > 180000);
       $('nota-proj').innerHTML = reserva ? `<b>Projeção parada${NAC.gerado ? ' desde ' + horaSP(NAC.gerado) : ''}:</b> o servidor da projeção não está conseguindo ler o TSE. A contagem oficial ao lado continua ao vivo.`
         : atrasada ? `<b>Atenção:</b> a projeção está atrasada em relação à contagem (usa ${P(pr.pct)} das urnas; o TSE já mostra ${P(brPct)}).`
@@ -1195,14 +1196,27 @@ footer a { color: var(--fg); }
       pintarTudo(); pintarCidade(); pintarMapaMun(); pintarListas(); pintarGraficoUF();
     } catch (e) { console.warn('momento da linha do tempo', mo.id, e); }
   }
-  function pararTL() { tlPlay = null; $('tl-play').textContent = 'Reproduzir'; }
+  const botaoTL = tocando => { const b = $('tl-play'); b.innerHTML = tocando ? '<span class="longo">Pausar</span><span class="curto" aria-hidden="true">❚❚</span>' : '<span class="longo">Reproduzir</span><span class="curto" aria-hidden="true">▶</span>'; b.setAttribute('aria-label', tocando ? 'Pausar' : 'Reproduzir a noite'); };
+  function pararTL() { tlPlay = null; botaoTL(false); }
   function tocarTL() {
     if (tlI >= TL.length - 1) tlI = -1;
-    const eu = {}; tlPlay = eu; $('tl-play').textContent = 'Pausar';
+    const eu = {}; tlPlay = eu; botaoTL(true);
     (async () => {
       while (tlPlay === eu && tlI < TL.length - 1) { await carregarMomento(tlI + 1); await new Promise(r => setTimeout(r, 650)); }
       if (tlPlay === eu) pararTL();
     })();
+  }
+  // marcas das horas cheias; pula a que ficaria colada na anterior (depois das 20h os momentos são mais espaçados)
+  function desenharMarcasTL() {
+    if (!TL) return;
+    const minimo = Math.max(7, 3400 / Math.max(200, $('tl-r').clientWidth || 600));   // ~34 px entre marcas
+    let ultima = -100;
+    $('tl-marcas').innerHTML = TL.map((mo, i) => {
+      const x = 100 * i / (TL.length - 1);
+      if (mo.m % 60 !== 0 || x - ultima < minimo) return '';
+      ultima = x;
+      return `<span style="left:${x.toFixed(2)}%">${rotHoraTL(mo.m).replace('h00', 'h')}</span>`;
+    }).join('');
   }
   async function montarLinhaTempo() {
     let ind = null;
@@ -1212,13 +1226,13 @@ footer a { color: var(--fg); }
     const r = $('tl-r');
     r.max = TL.length - 1; r.value = tlI = TL.length - 1;
     $('tl-txt').textContent = rotHoraTL(TL[tlI].m);
-    $('tl-marcas').innerHTML = TL.map((mo, i) => mo.m % 60 === 0 ? `<span style="left:${(100 * i / (TL.length - 1)).toFixed(2)}%">${rotHoraTL(mo.m).replace('h00', 'h')}</span>` : '').join('');
+    $('tl').hidden = false;               // visível antes de medir a largura do controle
+    desenharMarcasTL();
     let deb = null;
     r.addEventListener('input', () => { pararTL(); const i = +r.value; $('tl-txt').textContent = rotHoraTL(TL[i].m); clearTimeout(deb); deb = setTimeout(() => carregarMomento(i), 120); });
     $('tl-ant').addEventListener('click', () => { pararTL(); carregarMomento(tlI - 1); });
     $('tl-prox').addEventListener('click', () => { pararTL(); carregarMomento(tlI + 1); });
     $('tl-play').addEventListener('click', () => { if (tlPlay) pararTL(); else tocarTL(); });
-    $('tl').hidden = false;
     return true;
   }
 
@@ -1249,7 +1263,7 @@ footer a { color: var(--fg); }
     const rotulo = () => { $('tema').textContent = escuro() ? 'Tema claro' : 'Tema escuro'; };
     $('tema').addEventListener('click', () => { document.documentElement.dataset.theme = escuro() ? 'light' : 'dark'; try { localStorage.setItem('tema', document.documentElement.dataset.theme); } catch (e) {} rotulo(); });
     rotulo();
-    let rz = null; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { pintarCurva(); pintarNoite(); pintarGraficoUF(); pintarErro(); }, 150); });
+    let rz = null; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { pintarCurva(); pintarNoite(); pintarGraficoUF(); pintarErro(); desenharMarcasTL(); }, 150); });
   }
 
   (async () => {
