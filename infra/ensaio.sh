@@ -30,8 +30,11 @@ rm -f $P/estado/*ensaio* $P/saida/*.json
 sudo systemctl restart projecao-ensaio
 sleep 2
 sudo systemctl start projecao-coletor
-# volta sozinho para o modo ao vivo depois de DURACAO minutos (padrão 120), mesmo que ninguém lembre
-DUR=${DURACAO:-120}
+# volta sozinho para o modo ao vivo depois de DURACAO minutos (padrão 120), mesmo que ninguém lembre.
+# Pelo controle.txt, a duração é o 4º número: "ensaio 2022 4 -3 1440" segura o ensaio por 24 horas.
+DUR=${DURACAO:-}
+if [ -z "$DUR" ]; then DUR=$(head -n1 $P/repo/controle.txt 2>/dev/null | tr -cd 'a-z0-9 .-' | awk '{print $5}'); fi
+[[ "$DUR" =~ ^[0-9]{1,4}$ ]] && [ "$DUR" -ge 1 ] || DUR=120
 sudo systemctl stop projecao-volta-ao-vivo.timer 2>/dev/null || true
 sudo systemctl reset-failed projecao-volta-ao-vivo.service 2>/dev/null || true
 sudo systemd-run --quiet --unit=projecao-volta-ao-vivo --uid=ubuntu --on-active="${DUR}m" /opt/projecao/ao_vivo.sh

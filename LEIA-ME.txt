@@ -14,6 +14,8 @@ Comandos (dentro da VM)
   /opt/projecao/status.sh            situação: serviços, % apurado, projeção, erros
   /opt/projecao/ensaio.sh 2022 4     ensaio com o 2º turno de 2022, 4x mais rápido
   /opt/projecao/ensaio.sh 2026 4     ensaio com o 1º turno de 2026 (só Lula e Flávio)
+                                     (o ensaio volta sozinho ao modo ao vivo em 2 horas; pelo GitHub,
+                                      "ensaio 2022 4 -3 1440" no controle.txt segura por 1440 minutos)
   /opt/projecao/ao_vivo.sh           volta para o TSE de verdade (FAZER ANTES DE DOMINGO)
                                      (seguro extra: domingo 25/10 às 8h a VM faz isso sozinha
                                       se um ensaio tiver ficado ligado — systemctl list-timers)
