@@ -1083,11 +1083,17 @@ footer a { color: var(--fg); }
     if (!('IntersectionObserver' in window)) return carregarVotos();
     const ob = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { ob.disconnect(); carregarVotos(); } }, {rootMargin: '600px'});
     ob.observe($('cidade'));
+    setTimeout(carregarVotos, 20000);    // reserva: se a seção não for vista, busca assim mesmo depois de 20 s
   }
   const votosTxt = (a, b) => a >= 0 && b >= 0 && Number.isFinite(a) && Number.isFinite(b) ? `<small class="votos"><span class="lula-c">${N0(a)}</span> × <span class="flavio-c">${N0(b)}</span> votos</small>` : '';
   function pintarCidade() {
     const {m, c, agora, p, fim} = cidadeDados(st.cidade);
     const vt = VOTOS && VOTOS[st.cidade];
+    // diferença em votos só com a apuração da cidade encerrada: no meio da contagem, os votos de agora são parciais
+    const sv = d => `${d > 0 ? '+' : d < 0 ? '−' : ''}${N0(Math.abs(d))}`;
+    const difVotos = !(vt && vt[0] >= 0 && c && c.st > 0) ? '' : fim
+      ? `<small class="votos"><span class="lula-c">Lula ${sv(c.A - vt[0])}</span>, <span class="flavio-c">Flávio ${sv(c.B - vt[1])}</span> votos</small>`
+      : '<small class="votos">em votos, quando a cidade terminar de apurar</small>';
     if (!m) { $('cidade').innerHTML = ''; return; }
     const pu = c && Number.isFinite(c.pu) ? c.pu : NaN;
     $('cidade').innerHTML = `<div class="info"><h4>${esc(m.nome)} <span class="muted" style="font-size:18px">${m.uf}</span>${m.cap ? '<span class="tag">capital</span>' : ''}</h4>
@@ -1096,7 +1102,7 @@ footer a { color: var(--fg); }
         <tr><td class="rot">Agora, contagem do TSE<small>${fim ? 'apuração encerrada' : c && c.st ? 'parcial' : ''}</small></td><td class="dupla">${dupla(agora)}${c && c.st > 0 ? votosTxt(c.A, c.B) : ''}</td></tr>
         <tr><td class="rot">Projeção da cidade</td><td class="dupla">${fim ? '<span class="muted">encerrada</span>' : dupla(pu)}</td></tr>
         <tr><td class="rot">1º turno de 2026, resultado final</td><td class="dupla">${dupla(m.l26)}${vt ? votosTxt(vt[0], vt[1]) : ''}</td></tr>
-        <tr><td class="rot">Diferença: agora − 1º turno</td><td class="dupla">${difTxt(agora - m.l26)}</td></tr>
+        <tr><td class="rot">Diferença: agora − 1º turno</td><td class="dupla">${difTxt(agora - m.l26)}${difVotos}</td></tr>
         <tr><td class="rot">2º turno de 2022, resultado final<small>Lula × Bolsonaro · diferença</small></td><td class="dupla">${dupla(m.l22)} <span style="font-size:15px">${difTxt(agora - m.l22)}</span>${vt ? votosTxt(vt[2], vt[3]) : ''}</td></tr>
       </tbody></table>`;
   }
@@ -1120,7 +1126,7 @@ footer a { color: var(--fg); }
     document.addEventListener('click', e => { if (!e.target.closest('.busca')) mostrar([]); });
   }
   function escolherCidade(cod) {
-    st.cidade = cod; pintarCidade();
+    st.cidade = cod; pintarCidade(); carregarVotos();
     const m = MUN.get(cod);
     if (m && m.uf !== 'ZZ' && m.uf !== st.munUF) { st.munUF = m.uf; $('mun-uf').value = m.uf; carregarMapaMun(); } else pintarMapaMun();
   }
