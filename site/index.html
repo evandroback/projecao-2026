@@ -26,9 +26,11 @@
   --line: #2e2e2e;
   --fg: #f1f1f1;
   --muted: #a4a4a4;
-  --faint: #6f6f6f;
+  --faint: #808080;
   --lula: #ff5a60;
   --flavio: #5a94ff;
+  --lula-fundo: #d9343c;
+  --flavio-fundo: #2f6fe6;
   --amber: #f2b24c;
   --ok: #3cc39a;
   --on-accent: #ffffff;
@@ -39,13 +41,13 @@
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #f3f3f1; --panel: #ffffff; --panel-2: #ebebe8; --line: #dcdcd7; --fg: #171717; --muted: #5d5d5d; --faint: #8c8c8c;
-    --lula: #d2303a; --flavio: #1f5fe0; --amber: #a86a0c; --ok: #128a66; --on-accent: #ffffff; --map-empty: #dddcd8; color-scheme: light;
+    --bg: #f3f3f1; --panel: #ffffff; --panel-2: #ebebe8; --line: #dcdcd7; --fg: #171717; --muted: #5d5d5d; --faint: #767676;
+    --lula: #d2303a; --flavio: #1f5fe0; --lula-fundo: #d2303a; --flavio-fundo: #1f5fe0; --amber: #a86a0c; --ok: #128a66; --on-accent: #ffffff; --map-empty: #dddcd8; color-scheme: light;
   }
 }
 :root[data-theme="light"] {
-  --bg: #f3f3f1; --panel: #ffffff; --panel-2: #ebebe8; --line: #dcdcd7; --fg: #171717; --muted: #5d5d5d; --faint: #8c8c8c;
-  --lula: #d2303a; --flavio: #1f5fe0; --amber: #a86a0c; --ok: #128a66; --on-accent: #ffffff; --map-empty: #dddcd8; color-scheme: light;
+  --bg: #f3f3f1; --panel: #ffffff; --panel-2: #ebebe8; --line: #dcdcd7; --fg: #171717; --muted: #5d5d5d; --faint: #767676;
+  --lula: #d2303a; --flavio: #1f5fe0; --lula-fundo: #d2303a; --flavio-fundo: #1f5fe0; --amber: #a86a0c; --ok: #128a66; --on-accent: #ffffff; --map-empty: #dddcd8; color-scheme: light;
 }
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -131,8 +133,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .pill.empate { color: var(--amber); }
 .pill.lula { color: var(--lula); }
 .pill.flavio { color: var(--flavio); }
-.pill.cheia.lula { background: var(--lula); color: var(--on-accent); border-color: var(--lula); }
-.pill.cheia.flavio { background: var(--flavio); color: var(--on-accent); border-color: var(--flavio); }
+.pill.cheia.lula { background: var(--lula-fundo); color: var(--on-accent); border-color: var(--lula-fundo); }
+.pill.cheia.flavio { background: var(--flavio-fundo); color: var(--on-accent); border-color: var(--flavio-fundo); }
 .chance { font-size: 13.5px; color: var(--muted); }
 .chance b { font-family: var(--f-num); font-size: 22px; color: var(--fg); font-weight: 600; margin-right: 2px; line-height: 1; }
 .sub-blocos { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 20px; }
