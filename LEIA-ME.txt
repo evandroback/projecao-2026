@@ -45,3 +45,6 @@ Página de teste /nova (modelo novo, desde 24/10/2026)
   - Gravador da noite (projecao-noite, ligado junto com o /nova): fotos do principal e do /nova durante a
     apuração em /opt/projecao/saida/noite (/dados/noite/indice.json e situacao.json). Para sozinho 1 h depois
     de 100% apurado ou na segunda 26/10 às 6h. Serve para a análise de onde a projeção errou.
+  - Bastidores: https://NOME/nova/painel.html (uso interno): principal × /nova lado a lado, saúde do coletor, do
+    /nova, do gravador e do atualizador, e o termômetro de surpresa (quanto a projeção de cada estado e cidade
+    mudou nos últimos 15/30/60 min e quanto isso puxou o Brasil; usa as fotos do gravador).
