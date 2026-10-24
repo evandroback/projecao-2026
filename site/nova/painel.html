@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bastidores · Projeção 2026</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root {
+  --bg: #111111; --panel: #1a1a1a; --panel-2: #242424; --line: #2e2e2e; --fg: #f1f1f1; --muted: #a4a4a4; --faint: #808080;
+  --lula: #ff5a60; --flavio: #5a94ff; --amber: #f2b24c; --ok: #3cc39a; --ruim: #ff6b5e;
+  --f-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root { --bg: #f3f3f1; --panel: #ffffff; --panel-2: #ebebe8; --line: #dcdcd7; --fg: #171717; --muted: #5d5d5d; --faint: #767676;
+    --lula: #d2303a; --flavio: #1f5fe0; --amber: #a86a0c; --ok: #128a66; --ruim: #c62f22; color-scheme: light; }
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 var(--f-ui); -webkit-text-size-adjust: 100%; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 12px 16px 40px; }
+h1 { font-size: 18px; margin: 4px 0 2px; }
+h2 { font-size: 15px; margin: 22px 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.sub { color: var(--muted); font-size: 13px; }
+.faixa { background: #f2b33d; color: #1a1200; padding: 7px 16px; font-weight: 600; font-size: 13px; text-align: center; }
+.faixa a { color: inherit; }
+.grade { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 620px) { .grade { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border-radius: 10px; padding: 12px 14px; }
+.rot { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.placar { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 4px 0; }
+.placar b { font-size: 30px; font-variant-numeric: tabular-nums; }
+.l { color: var(--lula); } .f { color: var(--flavio); } .m { color: var(--muted); }
+.estado { font-weight: 700; }
+.linha { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 3px 0; border-top: 1px solid var(--line); }
+.linha:first-of-type { border-top: 0; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dif { font-size: 14px; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 5px 6px; text-align: right; border-top: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; border-top: 0; }
+td:first-child, th:first-child { text-align: left; }
+.tab-wrap { overflow-x: auto; }
+.barra { display: inline-block; height: 8px; border-radius: 2px; vertical-align: middle; }
+.ponto { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.v { background: var(--ok); } .a { background: var(--amber); } .r { background: var(--ruim); } .c { background: var(--faint); }
+.botoes { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 8px; }
+.botoes button { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); cursor: pointer; }
+.botoes button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.nota { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
+.vazio { color: var(--muted); font-size: 14px; padding: 8px 0; }
+svg text { fill: var(--muted); font-size: 11px; }
+@media (max-width: 620px) { .largo { display: none; } th, td { padding: 5px 4px; } }
+</style>
+</head>
+<body>
+<div class="faixa">Bastidores — uso interno, não divulgar · <a href="/">site principal</a> · <a href="/nova/">/nova</a></div>
+<div class="wrap">
+  <h1>Bastidores da noite</h1>
+  <div class="sub" id="topo">carregando…</div>
+
+  <h2>Projeção: principal × novo</h2>
+  <div class="grade">
+    <div class="card" id="c-principal"></div>
+    <div class="card" id="c-nova"></div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div class="placar"><span class="rot">Contagem do TSE agora (só os dois)</span><span class="num" id="cru">—</span></div>
+    <div class="dif" id="dif">—</div>
+  </div>
+
+  <h2>A noite</h2>
+  <div class="card"><div id="graf"></div><div class="nota"><span class="barra" style="width:18px;background:var(--amber)"></span> principal · <span class="barra" style="width:18px;background:var(--ok)"></span> novo · <span class="barra" style="width:18px;background:var(--faint)"></span> contagem do TSE. Lula, só os dois, em %.</div></div>
+
+  <h2>Termômetro de surpresa</h2>
+  <div class="card">
+    <div class="botoes" id="b-modelo"><button data-m="principal" aria-pressed="true">Modelo principal</button><button data-m="nova" aria-pressed="false">Modelo novo</button></div>
+    <div class="botoes" id="b-janela"><button data-j="15" aria-pressed="false">15 min</button><button data-j="30" aria-pressed="true">30 min</button><button data-j="60" aria-pressed="false">1 hora</button></div>
+    <div id="termo" class="vazio">Aparece quando houver fotos da noite (o gravador começa com a apuração).</div>
+    <p class="nota">Quanto a projeção de cada estado mudou na janela escolhida. Se o modelo tivesse acertado desde o começo, ficaria perto de zero; onde mexe muito, o modelo está sendo surpreendido. <b>Puxão BR</b>: quanto essa mudança mexeu na diferença entre os dois no Brasil (em pontos; + a favor de Lula), pesando o tamanho do eleitorado do estado.</p>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div class="rot">Cidades que mais mexeram na projeção (mesma janela)</div>
+    <div id="cidades" class="vazio">—</div>
+  </div>
+
+  <h2>Saúde</h2>
+  <div class="grade">
+    <div class="card" id="s-principal"></div>
+    <div class="card" id="s-nova"></div>
+    <div class="card" id="s-gravador"></div>
+    <div class="card" id="s-atualizador"></div>
+  </div>
+  <p class="nota" id="rodape"></p>
+</div>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const nf = d => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: d, maximumFractionDigits: d});
+  const N = (x, d = 1) => x == null || !Number.isFinite(x) ? '—' : nf(d).format(x);
+  const S = (x, d = 1) => x == null || !Number.isFinite(x) ? '—' : (x > 0 ? '+' : x < 0 ? '−' : '') + nf(d).format(Math.abs(x));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+  const hora = ms => new Date(ms).toLocaleTimeString('pt-BR', {timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'});
+  const idade = ms => { const s = Math.max(0, (Date.now() - ms) / 1000); return s < 90 ? `${Math.round(s)} s` : s < 5400 ? `${Math.round(s / 60)} min` : `${N(s / 3600, 1)} h`; };
+  const REG = {AC: 'N', AM: 'N', AP: 'N', PA: 'N', RO: 'N', RR: 'N', TO: 'N', AL: 'NE', BA: 'NE', CE: 'NE', MA: 'NE', PB: 'NE', PE: 'NE', PI: 'NE', RN: 'NE', SE: 'NE', DF: 'CO', GO: 'CO', MS: 'CO', MT: 'CO', ES: 'SE', MG: 'SE', RJ: 'SE', SP: 'SE', PR: 'S', RS: 'S', SC: 'S', ZZ: 'EX'};
+  const NOME_REG = {N: 'Norte', NE: 'Nordeste', CO: 'Centro-Oeste', SE: 'Sudeste', S: 'Sul', EX: 'Exterior'};
+  async function json(url) { const r = await fetch(url, {cache: 'no-cache'}); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }
+  async function jsonGz(url) {
+    const r = await fetch(url, {cache: 'force-cache'}); if (!r.ok) throw new Error('HTTP ' + r.status);
+    const b = new Uint8Array(await r.arrayBuffer());
+    if (b[0] === 0x1f && b[1] === 0x8b) return new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).json();
+    return JSON.parse(new TextDecoder().decode(b));
+  }
+  const tenta = p => p.catch(e => null);
+  const st = {modelo: 'principal', janela: 30};
+  let D = {}, MUN = null, ANTES = {}, ultTermo = 0;
+
+  // ---------- projeção ----------
+  function rotulo(p) {
+    if (!p || !p.pronto) return '<span class="m">aguardando</span>';
+    const q = p.lider === 'lula' ? '<span class="l">Lula</span>' : '<span class="f">Flávio</span>';
+    return p.status === 'vence' ? `${q} vence` : p.status === 'vantagem' ? `Vantagem ${q}` : 'Empate técnico';
+  }
+  function cartao(el, titulo, n) {
+    const p = n && n.proj;
+    if (!p || p.l2 == null) { el.innerHTML = `<div class="rot">${titulo}</div><div class="vazio">${n ? 'aguardando a apuração' : 'sem dados'}</div>`; return; }
+    const ch = Math.max(p.chAdv, 1 - p.chAdv), meia = 1.96 * p.sig / 2;
+    const cr = n.cravou && !n.cravou.desfeito ? `${n.cravou.lider === 'lula' ? 'Lula' : 'Flávio'} às ${esc(n.cravou.hg ? n.cravou.hg.slice(0, 5) : hora(n.cravou.t))} (${N(n.cravou.pct, 1)}%)` : n.cravou && n.cravou.desfeito ? 'cravou e desfez' : 'ainda não';
+    el.innerHTML = `<div class="rot">${titulo}</div>
+      <div class="placar"><b class="l">${N(p.l2, 1)}</b><span class="m">×</span><b class="f">${N(100 - p.l2, 1)}</b></div>
+      <div class="linha"><span>Situação</span><span class="estado">${rotulo(p)}</span></div>
+      <div class="linha"><span>Chance do líder</span><span class="num">${p.sig > 0 ? (ch > 0.99 ? '>99' : N(100 * ch, 0)) + '%' : '—'}</span></div>
+      <div class="linha"><span>Faixa de Lula</span><span class="num">${p.sig > 0 ? N(Math.max(0, p.l2 - meia), 1) + ' a ' + N(Math.min(100, p.l2 + meia), 1) : 'resultado final'}</span></div>
+      <div class="linha"><span>Cravou</span><span class="num">${cr}</span></div>`;
+  }
+  function pintarProjecao() {
+    const n = D.nac, v = D.nova;
+    const br = n && n.br, pct = br && br.ts ? 100 * br.st / br.ts : 0;
+    $('topo').innerHTML = n ? `${n.ensaio ? '<b>ENSAIO</b> · ' : ''}TSE ${esc(n.tse && n.tse.hg ? n.tse.hg.slice(0, 5) : '—')} · ${N(pct, 2)}% das urnas apuradas · atualizado ${hora(Date.now())}` : 'sem dados do site principal';
+    cartao($('c-principal'), 'Site principal (o que o público vê)', n);
+    cartao($('c-nova'), 'Modelo novo (/nova)', v);
+    $('cru').innerHTML = br && br.A + br.B > 0 ? `<span class="l">${N(100 * br.A / (br.A + br.B), 2)}</span> × <span class="f">${N(100 * br.B / (br.A + br.B), 2)}</span>` : '—';
+    const a = n && n.proj && n.proj.l2, b = v && v.proj && v.proj.l2;
+    $('dif').innerHTML = a != null && b != null ? `Diferença entre os modelos: <b class="num">${S(2 * (b - a), 2)}</b> ponto na diferença entre os dois (novo − principal; + a favor de Lula no novo)` : 'Diferença entre os modelos: aparece com a apuração';
+  }
+
+  // ---------- gráfico da noite ----------
+  function pintarGrafico() {
+    const el = $('graf'), hp = (D.nac && D.nac.hist) || [], hn = (D.nova && D.nova.hist) || [];
+    if (hp.length < 2 && hn.length < 2) { el.innerHTML = '<div class="vazio">O gráfico aparece com a apuração.</div>'; return; }
+    const x = h => Number.isFinite(h[5]) ? h[5] : (h[0] - (hp[0] || hn[0])[0]) / 60000;
+    const pts = [...hp, ...hn];
+    const xs = pts.map(x), ys = pts.flatMap(h => [h[3], h[2]]).filter(Number.isFinite);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs, x0 + 10), y0 = Math.floor(Math.min(...ys, 49) - 0.5), y1 = Math.ceil(Math.max(...ys, 51) + 0.5);
+    const W = Math.max(300, Math.round(el.clientWidth || 600)), H = W < 500 ? 200 : 240, ml = 30, mr = 6, mt = 8, mb = 20;
+    const X = v => ml + (v - x0) / (x1 - x0) * (W - ml - mr), Y = v => mt + (y1 - v) / (y1 - y0) * (H - mt - mb);
+    const linha = (h, i, cor, tr) => { const p = h.filter(q => Number.isFinite(q[i])).map(q => `${X(x(q)).toFixed(1)},${Y(q[i]).toFixed(1)}`); return p.length > 1 ? `<polyline fill="none" stroke="${cor}" stroke-width="2.4" ${tr ? 'stroke-dasharray="4 3"' : ''} points="${p.join(' ')}"/>` : ''; };
+    let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="max-width:100%;height:auto" role="img" aria-label="Projeção ao longo da noite">`;
+    for (let y = y0; y <= y1; y++) if ((y1 - y0) <= 8 || y % 2 === 0) s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(y)}" y2="${Y(y)}" stroke="var(--line)"/><text x="${ml - 4}" y="${Y(y) + 4}" text-anchor="end">${y}</text>`;
+    s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(50)}" y2="${Y(50)}" stroke="var(--faint)" stroke-dasharray="2 3"/>`;
+    for (let m = Math.ceil(x0 / 30) * 30; m <= x1; m += 30) { const hh = 17 + Math.floor(m / 60), mm = m % 60; s += `<text x="${X(m)}" y="${H - 6}" text-anchor="middle">${hh % 24}h${mm ? String(mm).padStart(2, '0') : ''}</text>`; }
+    s += linha(hp, 2, 'var(--faint)', true) + linha(hp, 3, 'var(--amber)') + linha(hn, 3, 'var(--ok)') + '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ---------- termômetro de surpresa ----------
+  async function carregarAntes() {
+    const ind = D.indice;
+    if (!ind || !ind.momentos || !ind.momentos.length) return null;
+    const alvo = Date.now() - st.janela * 60000;
+    let mo = null;
+    for (const m of ind.momentos) if (Date.now() - m.t >= st.janela * 30000 && (!mo || Math.abs(m.t - alvo) < Math.abs(mo.t - alvo))) mo = m;
+    if (!mo) mo = ind.momentos[0];
+    if (Date.now() - mo.t < 5 * 60000) return null;
+    const k = mo.id;
+    if (!ANTES[k]) {
+      const [pn, nn, pc, nc] = await Promise.all(['principal_nacional', 'nova_nacional', 'principal_cidades', 'nova_cidades'].map(f => tenta(jsonGz(`/dados/noite/m/${k}/${f}.json.gz`))));
+      ANTES = {[k]: {mo, pn, nn, pc, nc}};
+    }
+    return ANTES[k];
+  }
+  async function pintarTermometro() {
+    const el = $('termo'), elc = $('cidades');
+    const a = await carregarAntes();
+    const agoraN = st.modelo === 'nova' ? D.nova : D.nac, antesN = a && (st.modelo === 'nova' ? a.nn : a.pn);
+    if (!a || !agoraN || !agoraN.proj || !agoraN.proj.uf || !antesN || !antesN.proj || !antesN.proj.uf) {
+      el.className = 'vazio'; el.innerHTML = 'Aparece depois de uns minutos de apuração gravada (precisa de uma foto do começo da janela).'; elc.className = 'vazio'; elc.innerHTML = '—'; return;
+    }
+    const nac = D.nac, teBR = Object.values(nac.uf || {}).reduce((s, u) => s + (u && u.te || 0), 0) || 1;
+    const linhas = [], porReg = {};
+    for (const uf of Object.keys(agoraN.proj.uf)) {
+      const l1 = agoraN.proj.uf[uf], l0 = antesN.proj.uf[uf];
+      if (!Number.isFinite(l1) || !Number.isFinite(l0)) continue;
+      const u = nac.uf && nac.uf[uf], w = u && u.te ? u.te / teBR : 0;
+      const d = l1 - l0, puxao = 2 * d * w;
+      const outro = (st.modelo === 'nova' ? D.nac : D.nova), lo = outro && outro.proj && outro.proj.uf ? outro.proj.uf[uf] : NaN;
+      linhas.push({uf, pct: u && u.ts ? 100 * u.st / u.ts : NaN, l1, d, puxao, entre: Number.isFinite(lo) ? 2 * (st.modelo === 'nova' ? l1 - lo : lo - l1) : NaN});
+      const r = REG[uf] || 'EX'; porReg[r] = (porReg[r] || 0) + puxao;
+    }
+    linhas.sort((x, y) => Math.abs(y.puxao) - Math.abs(x.puxao));
+    const brD = 2 * (agoraN.proj.l2 - antesN.proj.l2), soma = linhas.reduce((s, l) => s + l.puxao, 0);
+    const maxP = Math.max(0.05, ...linhas.map(l => Math.abs(l.puxao)));
+    const bar = v => `<span class="barra" style="width:${Math.round(40 * Math.abs(v) / maxP)}px;background:${v >= 0 ? 'var(--lula)' : 'var(--flavio)'}"></span>`;
+    const minutos = Math.round((Date.now() - a.mo.t) / 60000);
+    el.className = ''; el.innerHTML = `<div class="sub" style="margin-bottom:6px">Desde ${esc(a.mo.hb ? a.mo.hb.slice(0, 5) : hora(a.mo.t))} (${minutos} min): a projeção do Brasil mexeu <b class="num">${S(brD, 2)}</b> ponto na diferença; soma dos estados ${S(soma, 2)}.</div>
+      <div class="sub" style="margin-bottom:8px">${Object.entries(porReg).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1])).map(([r, v]) => `${NOME_REG[r]} <b class="num">${S(v, 2)}</b>`).join(' · ')}</div>
+      <div class="tab-wrap"><table><thead><tr><th>Estado</th><th>Apurado</th><th class="largo">Projeção Lula</th><th>Mudou</th><th>Puxão BR</th><th class="largo"></th><th>Novo − princ.</th></tr></thead><tbody>
+      ${linhas.map(l => `<tr><td>${l.uf}</td><td>${N(l.pct, 0)}%</td><td class="largo">${N(l.l1, 1)}</td><td>${S(l.d, 2)}</td><td>${S(l.puxao, 2)}</td><td class="largo" style="text-align:left">${bar(l.puxao)}</td><td>${S(l.entre, 2)}</td></tr>`).join('')}
+      </tbody></table></div>`;
+    // cidades
+    const cAgora = st.modelo === 'nova' ? D.cidNova : D.cid, cAntes = st.modelo === 'nova' ? a.nc : a.pc;
+    if (!cAgora || !cAntes || !cAgora.c || !cAntes.c) { elc.className = 'vazio'; elc.innerHTML = '—'; return; }
+    const antes = new Map(cAntes.c.map(r => [r[0], r]));
+    const te = new Map((D.cid && D.cid.c || []).map(r => [r[0], r[8] || 0]));
+    const lista = [];
+    for (const r of cAgora.c) {
+      const r0 = antes.get(r[0]);
+      if (!r0 || r[6] < 0 || r0[6] < 0) continue;
+      const d = (r[6] - r0[6]) / 100, w = (te.get(r[0]) || 0) / teBR;
+      if (!w) continue;
+      lista.push({cod: r[0], d, puxao: 2 * d * w, pct: r[2] ? 100 * r[1] / r[2] : NaN, l: r[6] / 100});
+    }
+    lista.sort((x, y) => Math.abs(y.puxao) - Math.abs(x.puxao));
+    const top = lista.slice(0, 12);
+    elc.className = ''; elc.innerHTML = top.length ? `<div class="tab-wrap"><table><thead><tr><th>Cidade</th><th>Apurado</th><th class="largo">Projeção Lula</th><th>Mudou</th><th>Puxão BR</th></tr></thead><tbody>
+      ${top.map(c => { const m = MUN && MUN.get(c.cod); return `<tr><td>${m ? esc(m.nome) + ' <span class="m">' + m.uf + '</span>' : c.cod}</td><td>${N(c.pct, 0)}%</td><td class="largo">${N(c.l, 1)}</td><td>${S(c.d, 2)}</td><td>${S(c.puxao, 3)}</td></tr>`; }).join('')}
+      </tbody></table></div>` : '<div class="vazio">nenhuma cidade mexeu ainda</div>';
+  }
+
+  // ---------- saúde ----------
+  const dot = c => `<span class="ponto ${c}"></span>`;
+  function pintarSaude() {
+    const n = D.nac, br = n && n.br, comecou = br && br.st > 0;
+    if (n) {
+      const s = n.saude || {}, pub = Date.now() - n.gerado, mun = s.munAtualizado ? Date.now() - s.munAtualizado : Infinity;
+      const cor = n.status === 'sem_acesso' || pub > 300000 ? 'r' : n.status === 'atrasado' || pub > 120000 ? 'a' : 'v';
+      $('s-principal').innerHTML = `<div class="rot">${dot(cor)}Coletor principal</div>
+        <div class="linha"><span>Situação</span><span>${esc(n.status)}${n.ensaio ? ' · ensaio' : ''}</span></div>
+        <div class="linha"><span>Publicou</span><span class="num">há ${idade(n.gerado)}</span></div>
+        <div class="linha"><span>Última cidade lida</span><span class="num">${Number.isFinite(mun) ? 'há ' + idade(s.munAtualizado) : '—'}${comecou && mun > 180000 ? ' ⚠' : ''}</span></div>
+        <div class="linha"><span>Leituras ok · erros</span><span class="num">${N(s.ok, 0)} · ${N(s.erros, 0)}</span></div>
+        <div class="linha"><span>Ritmo</span><span class="num">${N(s.ritmo, 1)} pedidos/s</span></div>
+        <div class="linha"><span>Último erro</span><span>${esc(s.ultimoErro || '—')}</span></div>`;
+    } else $('s-principal').innerHTML = `<div class="rot">${dot('r')}Coletor principal</div><div class="vazio">sem resposta</div>`;
+    const v = D.sitNova;
+    $('s-nova').innerHTML = v ? `<div class="rot">${dot(v.erro ? 'r' : Date.now() - v.em > 120000 ? 'a' : v.modo === 'eleitorado' ? 'v' : 'a')}Processo do /nova</div>
+        <div class="linha"><span>Conferiu</span><span class="num">há ${idade(v.em)}</span></div>
+        <div class="linha"><span>Modo</span><span>${esc(v.modo)} (${N(v.comEleitorado, 0)} de ${N(v.cidades, 0)} cidades com eleitorado)</span></div>
+        <div class="linha"><span>Ordem de chegada</span><span class="num">${N(v.comCurva, 0)} cidades</span></div>
+        <div class="linha"><span>Erro</span><span>${esc(v.erro || '—')}</span></div>` : `<div class="rot">${dot('r')}Processo do /nova</div><div class="vazio">sem resposta</div>`;
+    const g = D.sitNoite;
+    $('s-gravador').innerHTML = g ? `<div class="rot">${dot(/erro|parado/.test(g.situacao) ? 'r' : Date.now() - Date.parse(g.conferido) > 120000 && !/encerrado/.test(g.situacao) ? 'a' : 'v')}Gravador da noite</div>
+        <div class="linha"><span>Situação</span><span>${esc(g.situacao)}</span></div>
+        <div class="linha"><span>Fotos</span><span class="num">${N(g.fotos, 0)}${g.ultima ? ' · última ' + esc(g.ultima.hb.slice(0, 5)) : ''}</span></div>
+        <div class="linha"><span>Disco livre</span><span class="num">${N(g.livreMB / 1000, 1)} GB</span></div>` : `<div class="rot">${dot('r')}Gravador da noite</div><div class="vazio">sem resposta</div>`;
+    const a = D.atual;
+    $('s-atualizador').innerHTML = a ? `<div class="rot">${dot(a.resultado !== 'ok' ? 'r' : Date.now() - Date.parse(a.conferido_em) > 180000 ? 'a' : 'v')}Atualizador (GitHub → VM)</div>
+        <div class="linha"><span>Versão</span><span class="num">${esc(String(a.versao).slice(0, 7))} · instalada ${esc(a.instalada_em)}</span></div>
+        <div class="linha"><span>Último pedido</span><span>${esc(a.pedido_aplicado)}</span></div>
+        <div class="linha"><span>Conferiu</span><span class="num">há ${idade(Date.parse(a.conferido_em))}</span></div>` : `<div class="rot">${dot('r')}Atualizador</div><div class="vazio">sem resposta</div>`;
+  }
+
+  // ---------- laço ----------
+  async function atualizar() {
+    const [nac, nova, sitNova, sitNoite, atual, cid, cidNova] = await Promise.all([
+      tenta(json('/dados/nacional.json')), tenta(json('/dados/nova/nacional.json')), tenta(json('/dados/nova/situacao.json')),
+      tenta(json('/dados/noite/situacao.json')), tenta(json('/dados/atualizador.json')), tenta(json('/dados/cidades.json')), tenta(json('/dados/nova/cidades.json'))]);
+    D = Object.assign(D, {nac, nova, sitNova, sitNoite, atual, cid, cidNova});
+    if (sitNoite && sitNoite.fotos && (!D.indice || D.indice.momentos.length !== sitNoite.fotos)) D.indice = await tenta(json('/dados/noite/indice.json'));
+    pintarProjecao(); pintarGrafico(); pintarSaude();
+    if (Date.now() - ultTermo > 30000) { ultTermo = Date.now(); try { await pintarTermometro(); } catch (e) { $('termo').textContent = 'erro no termômetro: ' + e.message; } }
+    $('rodape').textContent = `Atualiza sozinho a cada 10 s. Última leitura ${hora(Date.now())}.`;
+  }
+  for (const b of document.querySelectorAll('#b-modelo button')) b.onclick = () => { st.modelo = b.dataset.m; for (const x of document.querySelectorAll('#b-modelo button')) x.setAttribute('aria-pressed', x === b); ultTermo = 0; atualizar(); };
+  for (const b of document.querySelectorAll('#b-janela button')) b.onclick = () => { st.janela = +b.dataset.j; for (const x of document.querySelectorAll('#b-janela button')) x.setAttribute('aria-pressed', x === b); ultTermo = 0; atualizar(); };
+  (async () => {
+    try { const B = await json('/estatico/base.json'); MUN = new Map(B.mun.map(r => [r[0], {nome: r[2], uf: B.UFS[r[1]]}])); } catch (e) {}
+    await atualizar();
+    setInterval(atualizar, 10000);
+  })();
+})();
+</script>
+</body>
+</html>

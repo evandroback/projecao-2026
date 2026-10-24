@@ -72,7 +72,7 @@ if [ "$NOVO" != "$ATUAL" ] && [ "$NOVO" != "$RECUSADA" ]; then
       mudou_nova=0
       for f in "$R"/nova/*.js; do cmp -s "$f" "$P/nova/$(basename "$f")" || mudou_nova=1; done
       cp "$R"/nova/*.js "$R"/nova/*.sh "$P/nova/"
-      cp "$R/site/nova/index.html" "$P/site/nova/index.html"
+      cp "$R"/site/nova/*.html "$P/site/nova/"          # index.html (/nova) e painel.html (bastidores)
       cp "$R/nova/modelo_nova.js" "$P/site/nova/modelo_nova.js"
       if [ $mudou_nova = 1 ] && systemctl is-active --quiet projecao-nova; then $SUDO systemctl restart projecao-nova; fi
     fi

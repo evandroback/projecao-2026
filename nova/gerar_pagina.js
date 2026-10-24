@@ -22,7 +22,7 @@ troca('<script src="/estatico/modelo.js"></script>',
 troca('const media = arr => X.map((p, i) => [p, (Math.abs(arr[0][i]) + Math.abs(arr[1][i]) + Math.abs(arr[2][i])) / 3]);',
   'const media = arr => X.map((p, i) => [p, arr.reduce((t, l) => t + Math.abs(l[i]), 0) / arr.length]);');
 troca("${SIM ? 'Simulação 2022 · ' : ''}", "${SIM ? 'Simulação 2022 · ' : 'Modelo novo · '}");
-troca('<body>\n', '<body>\n<div role="note" style="background:#f2b33d;color:#1a1200;padding:8px 16px;font:600 14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;text-align:center">Versão de teste do <b>modelo novo</b> — uso interno, não divulgar. O site oficial é a <a href="/" style="color:inherit;text-decoration:underline">página principal</a>.</div>\n');
+troca('<body>\n', '<body>\n<div role="note" style="background:#f2b33d;color:#1a1200;padding:8px 16px;font:600 14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;text-align:center">Versão de teste do <b>modelo novo</b> — uso interno, não divulgar. O site oficial é a <a href="/" style="color:inherit;text-decoration:underline">página principal</a> · <a href="/nova/painel.html" style="color:inherit;text-decoration:underline">bastidores</a>.</div>\n');
 troca('Média de três noites: 1º turno de 2026, 2º turno de 2022 e 2º turno de 2018.',
   'Modelo novo. Média de seis noites: 2º turnos de 2002, 2006, 2010, 2014, 2018 e 2022 (2018 e 2022 com a ordem real de chegada das urnas; as outras, com a ordem de 2022).');
 troca('Cidades com poucos votos apurados puxam a estimativa do estado e da região.</p>',
