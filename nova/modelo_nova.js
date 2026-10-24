@@ -9,8 +9,10 @@
  *
  * Duas formas de saber quanto da cidade já foi contado:
  *   'eleitorado' — eleitorado das urnas contadas (est) e total (te) do TSE: a forma testada como melhor;
- *   'secoes'     — só nº de seções contadas/total (st/ts): usada quando o arquivo de cidades não traz est/te.
- * Cada forma tem a sua faixa, calibrada nas 6 noites com o próprio modelo, e alargada em 25% (FATOR).
+ *   'secoes'     — só nº de seções contadas/total (st/ts): usada quando o arquivo de cidades não traz est/te
+ *                  (e, no modo 'eleitorado', em cada cidade que vier sem eleitorado).
+ * Cada forma tem a sua faixa, calibrada nas 6 noites com o próprio modelo, com a mesma receita do site
+ * principal (1,5 × erro típico dos testes; FATOR 1). Em 24/10 a faixa chegou a ser 25% mais larga (FATOR 1,25).
  */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) {
@@ -20,7 +22,7 @@
   } else raiz.ModeloNovo = fabrica(raiz.Modelo);
 })(typeof self !== 'undefined' ? self : this, function (M) {
   'use strict';
-  const LAM = 0.6, FATOR = 1.25;
+  const LAM = 0.6, FATOR = 1;
 
   /*
    * lista: [{cod, uf}] · refs: {cod: {pt, adv, val, aptos}} (1º turno, por cidade)
@@ -67,28 +69,31 @@
   /*
    * st: por unidade — x, y (votos de Lula e do adversário), v (válidos dos dois), sc e ts (seções contadas e total);
    *     a e A (eleitorado das seções contadas e total, do TSE) quando houver.
-   * modo: 'eleitorado' (precisa de a e A) ou 'secoes'.
+   * modo: 'eleitorado' (usa a e A em cada cidade que tiver A > 0; as outras vão por seções) ou 'secoes'.
    */
   function projetar(U, st, modo, lam) {
     const n = U.n, C = U.C, lg = M.logit, ex = M.expit, L = lam == null ? LAM : lam, o = {};
     const rc = new Float64Array(n), rr = new Float64Array(n), nc = new Float64Array(n), nr = new Float64Array(n), aa = new Float64Array(n), AA = new Float64Array(n);
+    const ele = new Uint8Array(n);
     for (let u = 0; u < n; u++) {
       const r = U.r_1t[u], nu = U.nu_ref[u], n1 = C.off[u + 1] - 1 - C.off[u];
       rc[u] = rr[u] = r; nc[u] = nr[u] = nu;
       const Tap = C.cap[C.off[u + 1] - 1], Tpt = C.cpt[C.off[u + 1] - 1], Tad = C.cad[C.off[u + 1] - 1];
       const usa = n1 > 0 && Tap > 0 && Tpt + Tad > 0;
       let q;
-      if (modo === 'eleitorado') {
-        AA[u] = st.A[u] > 0 ? st.A[u] : U.A[u];
+      // eleitorado do TSE quando a cidade tem (e é coerente: contou seção => eleitorado contado > 0)
+      ele[u] = modo === 'eleitorado' && st.A[u] > 0 && (st.a[u] > 0 || !(st.sc[u] > 0)) ? 1 : 0;
+      if (ele[u]) {
+        AA[u] = st.A[u];
         aa[u] = Math.max(0, st.a[u] || 0);
-        q = AA[u] > 0 ? Math.min(1, aa[u] / AA[u]) : 0;
+        q = Math.min(1, aa[u] / AA[u]);
         if (!usa || aa[u] <= 0) continue;
-        naCurva(C, u, modo, q * Tap, o);
+        naCurva(C, u, 'eleitorado', q * Tap, o);
       } else {
         AA[u] = usa ? Tap : U.A[u];
         q = st.ts[u] > 0 ? Math.min(1, st.sc[u] / st.ts[u]) : 0;
         if (!usa) { aa[u] = q * AA[u]; continue; }
-        naCurva(C, u, modo, q, o);
+        naCurva(C, u, 'secoes', q, o);
         aa[u] = o.cap;
         if (!(st.sc[u] > 0)) continue;
       }
@@ -97,7 +102,7 @@
       const nc0 = o.cap > 0 ? o.cva / o.cap : nu, nr0 = rap > 0.5 ? rva / rap : nc0;
       rc[u] = r + L * (rc0 - r); rr[u] = r + L * (rr0 - r); nc[u] = nu + L * (nc0 - nu); nr[u] = nu + L * (nr0 - nu);
     }
-    const contou = u => modo === 'eleitorado' ? aa[u] > 0 : st.sc[u] > 0;
+    const contou = u => ele[u] ? aa[u] > 0 : st.sc[u] > 0;
     const d = new Float64Array(n), w = new Float64Array(n);
     for (let u = 0; u < n; u++) { const den = st.x[u] + st.y[u]; if (den > 0) { d[u] = lg((st.x[u] + 0.5) / (den + 1)) - lg(rc[u]); w[u] = den; } }
     const s = M.pooled(U, d, w, M.KAP_HIER);

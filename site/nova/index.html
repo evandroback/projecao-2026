@@ -555,7 +555,7 @@ footer a { color: var(--fg); }
           <p>A contagem do TSE não chega por igual: algumas regiões terminam antes de outras. Por isso o número cru engana no começo da noite.</p>
           <p>A projeção compara cada cidade com o resultado dela no 1º turno, estima quanto cada lado ganhou ou perdeu ali e aplica essa mudança aos votos que ainda faltam. Cidades com poucos votos apurados puxam a estimativa do estado e da região.</p>
           <p><b>Nesta versão de teste</b>, cada cidade é comparada com o 1º turno das mesmas urnas que já chegaram (pela ordem de chegada de 4 de outubro), e o que falta é estimado pelo 1º turno das urnas que faltam.</p>
-          <p>Não é pesquisa. Usa só os resultados oficiais divulgados pelo TSE. A faixa e a chance são aproximadas: foram calibradas com seis eleições de teste e alargadas em 25%.</p>
+          <p>Não é pesquisa. Usa só os resultados oficiais divulgados pelo TSE. A faixa e a chance são aproximadas: foram calibradas com seis eleições de teste, com a mesma regra da página principal.</p>
           <p id="p-sim"><a href="/simulacao">Veja a simulação com a eleição de 2022</a> para entender como o site se comporta durante a noite.</p>
         </article>
       </div>
@@ -567,7 +567,7 @@ footer a { color: var(--fg); }
 
 <script src="/estatico/modelo.js"></script>
 <script src="/nova/modelo_nova.js"></script>
-<script>Modelo.TESTE = {pontos: ModeloNovo.TESTE.pontos, m: ModeloNovo.TESTE.m.secoes, b: ModeloNovo.TESTE.b};</script>
+<script>Modelo.TESTE = {pontos: ModeloNovo.TESTE.pontos, m: ModeloNovo.TESTE.m.eleitorado, b: ModeloNovo.TESTE.b};</script>
 <script>
 (() => {
   'use strict';

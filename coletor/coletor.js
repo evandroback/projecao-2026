@@ -244,12 +244,14 @@ function publicar(forcar) {
     br: enx(NAC), uf: ufs, proj, cravou: CRAVOU, hist: HIST
   });
 }
+// colunas: código, seções apuradas, seções, votos 13, votos 22, válidos, projeção (×10000),
+// eleitorado das seções apuradas, eleitorado (as duas últimas são lidas só pelo /nova; a página principal usa até a 7ª)
 function publicarCidades() {
   const c = [];
   for (let u = 0; u < U.n; u++) {
     const m = MUN[u];
     if (!m || m.ts === 0) continue;
-    c.push([U.cod[u], m.st, m.ts, m.A, m.B, m.vv, PROJ && PROJ.pu ? PROJ.pu[u] : -1]);
+    c.push([U.cod[u], m.st, m.ts, m.A, m.B, m.vv, PROJ && PROJ.pu ? PROJ.pu[u] : -1, m.est, m.te]);
   }
   gravarJSON('cidades.json', {v: 1, gerado: Date.now(), ensaio: CFG.ensaio || null, c});
 }

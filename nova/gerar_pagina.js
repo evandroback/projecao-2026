@@ -18,7 +18,7 @@ troca('<title>Projeção da Apuração 2026</title>',
 troca("const DADOS = SIM ? '/simulacao/dados' : '/dados';",
   "const DADOS = new URLSearchParams(location.search).get('dados') === 'nova_ensaio' ? '/dados/nova_ensaio' : '/dados/nova';   // /nova: números do modelo novo");
 troca('<script src="/estatico/modelo.js"></script>',
-  '<script src="/estatico/modelo.js"></script>\n<script src="/nova/modelo_nova.js"></script>\n<script>Modelo.TESTE = {pontos: ModeloNovo.TESTE.pontos, m: ModeloNovo.TESTE.m.secoes, b: ModeloNovo.TESTE.b};</script>');
+  '<script src="/estatico/modelo.js"></script>\n<script src="/nova/modelo_nova.js"></script>\n<script>Modelo.TESTE = {pontos: ModeloNovo.TESTE.pontos, m: ModeloNovo.TESTE.m.eleitorado, b: ModeloNovo.TESTE.b};</script>');
 troca('const media = arr => X.map((p, i) => [p, (Math.abs(arr[0][i]) + Math.abs(arr[1][i]) + Math.abs(arr[2][i])) / 3]);',
   'const media = arr => X.map((p, i) => [p, arr.reduce((t, l) => t + Math.abs(l[i]), 0) / arr.length]);');
 troca("${SIM ? 'Simulação 2022 · ' : ''}", "${SIM ? 'Simulação 2022 · ' : 'Modelo novo · '}");
@@ -27,7 +27,7 @@ troca('Média de três noites: 1º turno de 2026, 2º turno de 2022 e 2º turno 
   'Modelo novo. Média de seis noites: 2º turnos de 2002, 2006, 2010, 2014, 2018 e 2022 (2018 e 2022 com a ordem real de chegada das urnas; as outras, com a ordem de 2022).');
 troca('Cidades com poucos votos apurados puxam a estimativa do estado e da região.</p>',
   'Cidades com poucos votos apurados puxam a estimativa do estado e da região.</p>\n          <p><b>Nesta versão de teste</b>, cada cidade é comparada com o 1º turno das mesmas urnas que já chegaram (pela ordem de chegada de 4 de outubro), e o que falta é estimado pelo 1º turno das urnas que faltam.</p>');
-troca('foram calibradas com só três eleições de teste.', 'foram calibradas com seis eleições de teste e alargadas em 25%.');
+troca('foram calibradas com só três eleições de teste.', 'foram calibradas com seis eleições de teste, com a mesma regra da página principal.');
 fs.mkdirSync(path.join(R, 'site/nova'), {recursive: true});
 fs.writeFileSync(path.join(R, 'site/nova/index.html'), s);
 console.log('site/nova/index.html gerado', s.length, 'bytes');

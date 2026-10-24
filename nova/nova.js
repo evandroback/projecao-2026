@@ -69,21 +69,23 @@ function trocarChave(nac) {
 const gravarEstado = (nome, obj) => gravar(CFG.estado, nome, obj);
 
 // ---------- projeção ----------
-let PROJ = null, PU = null, MODO = null;
+let PROJ = null, PU = null, MODO = null, COM_ELEITORADO = 0;
 function calcular(nac, cid) {
   const n = U.n, F = () => new Float64Array(n);
   const st = {x: F(), y: F(), v: F(), sc: F(), ts: F(), a: F(), A: F()};
-  let secSom = 0, secTot = 0, comDados = 0, comEleitorado = 0, linhas = 0;
+  let secSom = 0, secTot = 0, comDados = 0, comEleitorado = 0, linhas = 0, comCampo = 0;
   for (const r of cid.c || []) {
     const u = IDX.get(+r[0]);
     if (u === undefined) continue;
     linhas++;
     st.sc[u] = +r[1] || 0; st.ts[u] = +r[2] || 0; st.x[u] = +r[3] || 0; st.y[u] = +r[4] || 0; st.v[u] = +r[5] || 0;
-    if (r.length >= 9 && r[8] > 0) { st.a[u] = +r[7] || 0; st.A[u] = +r[8]; comEleitorado++; }
+    if (r.length >= 9) { comCampo++; if (r[8] > 0) { st.a[u] = +r[7] || 0; st.A[u] = +r[8]; comEleitorado++; } }
     secSom += st.sc[u]; secTot += st.ts[u];
     if (st.sc[u] > 0) comDados++;
   }
-  MODO = linhas > 0 && comEleitorado === linhas ? 'eleitorado' : 'secoes';
+  // o coletor principal manda o eleitorado (colunas 8 e 9) desde 24/10; cidade sem eleitorado vai por seções
+  MODO = comCampo > 0 ? 'eleitorado' : 'secoes';
+  COM_ELEITORADO = comEleitorado;
   const pct = secTot > 0 ? 100 * secSom / secTot : 0;
   if (secSom === 0) { PROJ = {pct: 0, pronto: false, status: 'aguardando', comDados}; PU = null; return; }
   const r = MN.projetar(U, st, MODO);
@@ -153,7 +155,7 @@ function volta() {
   return true;
 }
 function situacao(ok) {
-  try { gravar(CFG.saida, 'situacao.json', {ok, erro: ultimoErro, voltas, modo: MODO, cidades: U.n, comCurva: U.C.comCurva, semRef: U.semRef, pct: PROJ ? PROJ.pct : 0, l2: PROJ ? PROJ.l2 : null, status: PROJ ? PROJ.status : null, em: Date.now()}); } catch (e) {}
+  try { gravar(CFG.saida, 'situacao.json', {ok, erro: ultimoErro, voltas, modo: MODO, comEleitorado: COM_ELEITORADO, cidades: U.n, comCurva: U.C.comCurva, semRef: U.semRef, pct: PROJ ? PROJ.pct : 0, l2: PROJ ? PROJ.l2 : null, status: PROJ ? PROJ.status : null, em: Date.now()}); } catch (e) {}
 }
 (async () => {
   for (;;) {
