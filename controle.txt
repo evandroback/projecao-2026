@@ -1,1 +1,1 @@
-gerar_votos
+nova_preparar 6
