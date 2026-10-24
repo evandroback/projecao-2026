@@ -1,1 +1,1 @@
-nova_preparar 6 v2
+nova_ligar

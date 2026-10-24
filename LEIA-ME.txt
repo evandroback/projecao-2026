@@ -42,3 +42,6 @@ Página de teste /nova (modelo novo, desde 24/10/2026)
     em /opt/projecao/saida/nova (/dados/nova/). Não pede nada ao TSE e não muda o site principal.
   - Pelo controle.txt: nova_preparar (monta a ordem de chegada, ensaia com 2022 e liga), nova_ligar, nova_desligar.
   - Ensaio: /nova/?dados=nova_ensaio e /dados/nova_ensaio/resumo.json (erro do modelo novo e do atual, momento a momento).
+  - Gravador da noite (projecao-noite, ligado junto com o /nova): fotos do principal e do /nova durante a
+    apuração em /opt/projecao/saida/noite (/dados/noite/indice.json e situacao.json). Para sozinho 1 h depois
+    de 100% apurado ou na segunda 26/10 às 6h. Serve para a análise de onde a projeção errou.
