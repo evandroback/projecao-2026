@@ -6,6 +6,8 @@
 #   3) instala; só reinicia o coletor se o código dele mudou.
 # Depois aplica o pedido da 1ª linha de controle.txt, se mudou. Pedidos aceitos (nada além disso):
 #   nada | ao_vivo | ensaio 2022|2026 [velocidade] [inicio] [minutos] | congelar_simulacao | gravar_simulacao [velocidade] | teste_tse [minutos] | gerar_votos | reconstruir_base | voltar_backup
+#   nova_preparar [segundos] | nova_ligar | nova_desligar
+#   nova_*: página de teste /nova com o modelo novo (pasta nova/). Lê o que o coletor principal publica; não muda o site principal.
 #   gravar_simulacao: regrava a noite de 2022 à parte e monta a linha do tempo do /simulacao
 #   gerar_votos: monta /estatico/votos_cidades.json (votos por cidade no 1º turno 2026 e no 2º turno 2022)
 #   teste_tse: lê o TSE de verdade (1º turno) no ritmo de domingo e publica o resumo em /dados/teste_tse.json
@@ -50,6 +52,9 @@ if [ "$NOVO" != "$ATUAL" ] && [ "$NOVO" != "$RECUSADA" ]; then
   ok=1
   for f in "$R"/coletor/*.js; do node --check "$f" 2>>"$LOG" || ok=0; done
   for f in "$R"/infra/*.sh; do bash -n "$f" 2>>"$LOG" || ok=0; done
+  for f in "$R"/nova/*.js; do [ -e "$f" ] && { node --check "$f" 2>>"$LOG" || ok=0; }; done
+  for f in "$R"/nova/*.sh; do [ -e "$f" ] && { bash -n "$f" 2>>"$LOG" || ok=0; }; done
+  if [ -d "$R/nova" ]; then [ -s "$R/site/nova/index.html" ] || ok=0; fi
   for f in site/index.html site/simulacao/index.html site/estatico/modelo.js site/estatico/mapas/br.json; do [ -s "$R/$f" ] || ok=0; done
   if [ $ok = 1 ]; then
     rm -rf "$P/backup-auto" && mkdir -p "$P/backup-auto" && cp -a "$P/app" "$P/site" "$P/backup-auto/"
@@ -61,6 +66,16 @@ if [ "$NOVO" != "$ATUAL" ] && [ "$NOVO" != "$RECUSADA" ]; then
     cp "$R/site/estatico/modelo.js" "$P/site/estatico/modelo.js"
     cp "$R/site/estatico/mapas/br.json" "$P/site/estatico/mapas/br.json"
     cp "$R/infra/ensaio.sh" "$R/infra/ao_vivo.sh" "$R/infra/status.sh" "$R/infra/teste_tse.sh" "$R/infra/gravar_simulacao.sh" "$P/"
+    # /nova (modelo novo, página de teste): pasta própria; o coletor principal não é reiniciado por causa dela
+    if [ -d "$R/nova" ]; then
+      mkdir -p "$P/nova" "$P/site/nova"
+      mudou_nova=0
+      for f in "$R"/nova/*.js; do cmp -s "$f" "$P/nova/$(basename "$f")" || mudou_nova=1; done
+      cp "$R"/nova/*.js "$R"/nova/*.sh "$P/nova/"
+      cp "$R/site/nova/index.html" "$P/site/nova/index.html"
+      cp "$R/nova/modelo_nova.js" "$P/site/nova/modelo_nova.js"
+      if [ $mudou_nova = 1 ] && systemctl is-active --quiet projecao-nova; then $SUDO systemctl restart projecao-nova; fi
+    fi
     # o próprio atualizador: copia e renomeia (a execução atual não é afetada)
     cp "$R/infra/atualizador.sh" "$P/.atualizador.novo" && chmod +x "$P/.atualizador.novo" && mv "$P/.atualizador.novo" "$P/atualizador.sh"
     if [ $mudou_coletor = 1 ]; then $SUDO systemctl restart projecao-coletor; fi
@@ -103,6 +118,11 @@ if [ -n "$PEDIDO" ] && [ "$PEDIDO" != "$FEITO" ] && [ "$RES" = ok ]; then
         2022|2026) bash "$P/ensaio.sh" "$a1" "$a2" "$a3" >> "$LOG" 2>&1 ;;
         *) log "pedido de ensaio sem ano válido: $PEDIDO" ;;
       esac ;;
+    nova_preparar)
+      s=${a1:-6}; [[ "$s" =~ ^[0-9]{1,2}$ ]] || s=6
+      $SUDO systemd-run --quiet --unit="projecao-nova-preparo-$(date +%s)" --uid=ubuntu bash "$P/nova/nova_preparar.sh" "$s" >> "$LOG" 2>&1 || log "nova_preparar: não consegui iniciar" ;;
+    nova_ligar) bash "$P/nova/nova_ligar.sh" >> "$LOG" 2>&1 || log "nova_ligar falhou" ;;
+    nova_desligar) bash "$P/nova/nova_ligar.sh" desligar >> "$LOG" 2>&1 ;;
     reconstruir_base) (cd "$P/app" && node --max-old-space-size=1536 preparar.js && node montar_site.js) >> "$LOG" 2>&1 || log "reconstruir_base falhou" ;;
     voltar_backup)
       if [ -d "$P/backup-auto/app" ]; then

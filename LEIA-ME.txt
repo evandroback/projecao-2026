@@ -34,3 +34,11 @@ Se algo der errado no domingo
     a contagem oficial direto do TSE. A projeção fica parada no último valor, com aviso.
   - Reiniciar o coletor não perde a noite: sudo systemctl restart projecao-coletor
   - Teste do modo reserva com o 1º turno: abra  https://NOME/?ele=6257&reserva=1
+
+Página de teste /nova (modelo novo, desde 24/10/2026)
+  - https://NOME/nova : a mesma página, com a projeção do modelo novo (compara cada cidade com o
+    1º turno das mesmas urnas que já chegaram, pela ordem de chegada de 4/10). Uso interno: não divulgar.
+  - projecao-nova (processo à parte) lê o que o coletor principal publica em /opt/projecao/saida e grava
+    em /opt/projecao/saida/nova (/dados/nova/). Não pede nada ao TSE e não muda o site principal.
+  - Pelo controle.txt: nova_preparar (monta a ordem de chegada, ensaia com 2022 e liga), nova_ligar, nova_desligar.
+  - Ensaio: /nova/?dados=nova_ensaio e /dados/nova_ensaio/resumo.json (erro do modelo novo e do atual, momento a momento).
