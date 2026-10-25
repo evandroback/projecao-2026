@@ -71,6 +71,14 @@ td.num { font-size: 17px; }
 td.bar { width: 130px; }
 td.bar .barra { width: 120px; height: 8px; }
 .destaque { font-weight: 700; }
+.aovivo { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 10px 14px; border-radius: 10px; background: var(--panel); border-left: 4px solid var(--foco); font-size: 14px; color: var(--muted); }
+.aovivo[hidden] { display: none; }
+.aovivo b { color: var(--fg); }
+.aovivo a { color: inherit; }
+.aovivo .pisca { width: 8px; height: 8px; border-radius: 50%; background: #d33b3b; display: inline-block; }
+.h-parc { font-size: 12.5px; color: var(--muted); margin: -2px 0 4px; }
+.h-parc:empty { display: none; }
+.parc { display: block; font-size: 11px; line-height: 1.1; color: var(--muted); }
 .vazio { padding: 28px; text-align: center; color: var(--muted); }
 .sec-tit { font: 700 26px/1.1 var(--f-num); margin: 8px 0 0; }
 .grade-ag { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -112,6 +120,8 @@ svg text { font-family: var(--f-ui); }
     <h1>Ranking das cidades no 1º turno</h1>
     <p class="lide">Votos válidos de cada candidato em cada município, contados urna por urna pelo TSE. Ordene pela coluna que quiser e filtre por região, estado e tamanho da cidade. Clique no nome de uma cidade para ver como ela votou para presidente desde 2002.</p>
   </header>
+
+  <div class="aovivo" id="aovivo" role="status" hidden></div>
 
   <section class="placar" aria-label="Resultado no Brasil" id="placar"></section>
 
@@ -168,7 +178,7 @@ svg text { font-family: var(--f-ui); }
   <div class="h-cab"><div><div class="rot">Presidente, 2002 a 2026 · PT e quem disputou o 2º turno com o PT</div><h2 id="h-tit"></h2><div class="m" id="h-uf" style="font-size:14px"></div></div><button class="botao" type="button" id="h-fechar">Fechar</button></div>
   <div class="h-graf">
     <div><div class="rot">1º turno · % dos votos válidos</div><div class="h-leg"><span><i style="background:var(--lula)"></i>PT</span><span><i style="background:var(--flavio)"></i>Adversário</span></div><div id="h-g1"></div></div>
-    <div><div class="rot">2º turno · % dos votos dos dois</div><div class="h-leg"><span><i style="background:var(--lula)"></i>PT</span><span><i style="background:var(--flavio)"></i>Adversário</span></div><div id="h-g2"></div></div>
+    <div><div class="rot">2º turno · % dos votos dos dois</div><div class="h-leg"><span><i style="background:var(--lula)"></i>PT</span><span><i style="background:var(--flavio)"></i>Adversário</span></div><div class="h-parc" id="h-parcial"></div><div id="h-g2"></div></div>
   </div>
   <div class="tab-wrap"><table id="h-tab"></table></div>
   <p class="nota" id="h-nota"></p>
@@ -308,8 +318,8 @@ svg text { font-family: var(--f-ui); }
   const ANOS = [...H.anos, 2026];
   const PT_N = ['Lula', 'Lula', 'Dilma', 'Dilma', 'Haddad', 'Lula', 'Lula'], AD_N = ['Serra', 'Alckmin', 'Serra', 'Aécio', 'Bolsonaro', 'Bolsonaro', 'Flávio'];
   const PORCOD = new Map(M.map(m => [m.cod, m]));
-  function serie(m) { return serieH(H.h[m.cod], m.v, m.val); }
-  function serieH(h, v26, val26) {
+  function serie(m) { return serieH(H.h[m.cod], m.v, m.val, VIVO && VIVO.cid.get(m.cod)); }
+  function serieH(h, v26, val26, t2v) {
     const t1 = [], t2 = [];
     H.anos.forEach((_, i) => {
       const r = h ? h.slice(i * 5, i * 5 + 5) : [-1, -1, -1, -1, -1];
@@ -317,7 +327,9 @@ svg text { font-family: var(--f-ui); }
       t2.push(r[3] >= 0 && r[3] + r[4] > 0 ? {pt: 100 * r[3] / (r[3] + r[4]), ad: 100 * r[4] / (r[3] + r[4]), val: r[3] + r[4], vpt: r[3], vad: r[4]} : null);
     });
     t1.push(val26 > 0 ? {pt: 100 * v26[1] / val26, ad: 100 * v26[0] / val26, val: val26, vpt: v26[1], vad: v26[0]} : null);
-    t2.push(null);                                      // 2º turno de 2026: depois da apuração de domingo
+    // 2º turno de 2026: o que o coletor do site já apurou (parcial até 100% das urnas); antes disso, nada
+    const v2 = t2v ? t2v.A + t2v.B : 0;
+    t2.push(v2 > 0 ? {pt: 100 * t2v.A / v2, ad: 100 * t2v.B / v2, val: v2, vpt: t2v.A, vad: t2v.B, parcial: t2v.st < t2v.ts, pct: t2v.ts ? 100 * t2v.st / t2v.ts : 0} : null);
     return {t1, t2};
   }
   function grafico(el, pts) {
@@ -328,18 +340,20 @@ svg text { font-family: var(--f-ui); }
     ANOS.forEach((a, i) => { s += `<text x="${X(i)}" y="${Hh - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${a}</text>`; });
     for (const [k, cor] of [['ad', 'var(--flavio)'], ['pt', 'var(--lula)']]) {
       let d = '', dentro = false;
-      pts.forEach((p, i) => { if (p) { d += `${dentro ? 'L' : 'M'}${X(i).toFixed(1)},${Y(p[k]).toFixed(1)} `; dentro = true; } else dentro = false; });
+      pts.forEach((p, i) => { if (p && !p.parcial) { d += `${dentro ? 'L' : 'M'}${X(i).toFixed(1)},${Y(p[k]).toFixed(1)} `; dentro = true; } else dentro = false; });
       if (d) s += `<path d="${d}" fill="none" stroke="${cor}" stroke-width="2.4" stroke-linejoin="round"/>`;
+      pts.forEach((p, i) => { if (p && p.parcial && pts[i - 1]) s += `<line x1="${X(i - 1).toFixed(1)}" y1="${Y(pts[i - 1][k]).toFixed(1)}" x2="${X(i).toFixed(1)}" y2="${Y(p[k]).toFixed(1)}" stroke="${cor}" stroke-width="2" stroke-dasharray="4 4"/>`; });
       pts.forEach((p, i) => { if (!p) return; const outro = p[k === 'pt' ? 'ad' : 'pt'], cima = p[k] >= outro;
-        s += `<circle cx="${X(i)}" cy="${Y(p[k])}" r="3.6" fill="${cor}"/><text x="${X(i)}" y="${Y(p[k]) + (cima ? -8 : 15)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${cor}">${Math.round(p[k])}</text>`; });
+        s += (p.parcial ? `<circle cx="${X(i)}" cy="${Y(p[k])}" r="4" fill="var(--panel)" stroke="${cor}" stroke-width="2"/>` : `<circle cx="${X(i)}" cy="${Y(p[k])}" r="3.6" fill="${cor}"/>`) + `<text x="${X(i)}" y="${Y(p[k]) + (cima ? -8 : 15)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${cor}">${Math.round(p[k])}</text>`; });
     }
     const falta = pts.map((p, i) => p ? -1 : i).filter(i => i >= 0);
-    for (const i of falta) s += `<text x="${X(i)}" y="${Y(50) - 6}" text-anchor="middle" font-size="10" fill="var(--faint)">${ANOS[i] === 2026 && pts === ULT.t2 ? 'dom.' : '—'}</text>`;
+    for (const i of falta) s += `<text x="${X(i)}" y="${Y(50) - 6}" text-anchor="middle" font-size="10" fill="var(--faint)">${ANOS[i] === 2026 && pts === ULT.t2 ? (VIVO ? 'aguard.' : 'dom.') : '—'}</text>`;
     el.innerHTML = s + '</svg>';
   }
-  let ULT = null;
+  let ULT = null, ABERTO = null, VIVO = null;
   function abrirHist(cod) {
     const m = PORCOD.get(cod); if (!m) return;
+    ABERTO = {cod};
     abrirSerie(m.nome, m.uf === 'ZZ' ? 'Exterior' : NOME_UF[m.uf], serie(m), 'Ano com "—": a cidade não teve votação própria naquela eleição. ');
   }
   function abrirSerie(titulo, sub, sr, extra) {
@@ -352,11 +366,13 @@ svg text { font-family: var(--f-ui); }
     let t = '<thead><tr><th scope="col">Ano</th><th scope="col" style="text-align:left">PT</th><th scope="col">1º turno</th><th scope="col">2º turno</th><th scope="col" style="text-align:left">Adversário</th><th scope="col">1º turno</th><th scope="col">2º turno</th><th scope="col">Válidos 1º t.</th></tr></thead><tbody>';
     ANOS.forEach((a, i) => {
       const p1 = sr.t1[i], p2 = sr.t2[i];
-      t += `<tr><td class="num">${a}</td><td style="text-align:left" class="l">${PT_N[i]}</td><td class="num l">${pc(p1, 'pt')}</td><td class="num l">${a === 2026 ? '<span class="m">domingo</span>' : pc(p2, 'pt')}</td><td style="text-align:left" class="f">${AD_N[i]}</td><td class="num f">${pc(p1, 'ad')}</td><td class="num f">${a === 2026 ? '<span class="m">domingo</span>' : pc(p2, 'ad')}</td><td class="num">${p1 ? I(p1.val) : '—'}</td></tr>`;
+      t += `<tr><td class="num">${a}</td><td style="text-align:left" class="l">${PT_N[i]}</td><td class="num l">${pc(p1, 'pt')}</td><td class="num l">${a === 2026 && !p2 ? `<span class="m">${VIVO ? 'aguardando' : 'domingo'}</span>` : pc(p2, 'pt') + (p2 && p2.parcial ? '<span class="parc">parcial</span>' : '')}</td><td style="text-align:left" class="f">${AD_N[i]}</td><td class="num f">${pc(p1, 'ad')}</td><td class="num f">${a === 2026 && !p2 ? `<span class="m">${VIVO ? 'aguardando' : 'domingo'}</span>` : pc(p2, 'ad') + (p2 && p2.parcial ? '<span class="parc">parcial</span>' : '')}</td><td class="num">${p1 ? I(p1.val) : '—'}</td></tr>`;
     });
     $('h-tab').innerHTML = t + '</tbody>';
+    const u2 = sr.t2[ANOS.length - 1];
+    $('h-parcial').textContent = !u2 ? (VIVO ? `2026: nenhuma urna apurada aqui ainda · atualizado às ${horaVivo()}` : '') : u2.parcial ? `2026 parcial: ${P(u2.pct)}% das urnas apuradas (ponto vazado) · atualizado às ${horaVivo()}` : `2026: apuração completa · atualizado às ${horaVivo()}`;
     const anos1 = sr.t1.filter(Boolean).length;
-    $('h-nota').textContent = `PT e o candidato que disputou o 2º turno com o PT em cada eleição (o adversário de 2026 é Flávio Bolsonaro). No 1º turno, % dos votos válidos: os outros candidatos completam os 100%. No 2º turno, % dos votos dos dois. ${anos1 < ANOS.length || extra.startsWith('Brasil') || extra.startsWith('Estados') ? extra : ''}Fonte: TSE, votação por seção de cada eleição. O 2º turno de 2026 é no domingo, 25/10.`;
+    $('h-nota').textContent = `PT e o candidato que disputou o 2º turno com o PT em cada eleição (o adversário de 2026 é Flávio Bolsonaro). No 1º turno, % dos votos válidos: os outros candidatos completam os 100%. No 2º turno, % dos votos dos dois. ${anos1 < ANOS.length || extra.startsWith('Brasil') || extra.startsWith('Estados') ? extra : ''}Fonte: TSE, votação por seção de cada eleição. ${VIVO ? 'O 2º turno de 2026 vem do TSE pelo coletor deste site e é atualizado a cada 2 minutos. Até 100% das urnas o número é parcial e pode mudar muito: as primeiras urnas não representam o total (em 2022, Bolsonaro esteve à frente no Brasil até perto de 68% das urnas apuradas).' : 'O 2º turno de 2026 é no domingo, 25/10.'}`;
   }
   $('corpo').addEventListener('click', e => { const b = e.target.closest('.cid-b'); if (b) abrirHist(+b.dataset.cod); });
 
@@ -394,11 +410,57 @@ svg text { font-family: var(--f-ui); }
     const b = e.target.closest('.cid-b'); if (!b) return;
     const g = G.get(b.dataset.g); if (!g) return;
     const extra = g.id === 'br' ? 'Brasil inclui o exterior e, em 2010, o voto em trânsito (eleitor votando fora do seu domicílio, que o TSE conta à parte). ' : g.id.startsWith('uf:') || g.id.startsWith('reg:') ? 'Estados e regiões não incluem o voto em trânsito de 2010. ' : '';
-    abrirSerie(g.nome, g.sub, serieH(g.h, g.v, g.val), extra);
+    ABERTO = {g: g.id};
+    abrirSerie(g.nome, g.sub, serieH(g.h, g.v, g.val, VIVO && VIVO.g.get(g.id)), extra);
   });
   $('h-fechar').addEventListener('click', () => $('hist').close ? $('hist').close() : $('hist').removeAttribute('open'));
   $('hist').addEventListener('click', e => { if (e.target === $('hist')) $('hist').close(); });
   addEventListener('resize', () => { if ($('hist').open && ULT) { grafico($('h-g1'), ULT.t1); grafico($('h-g2'), ULT.t2); } });
+
+  // ---- 2º turno de 2026 ao vivo (só na cópia do servidor do site, que tem /dados/cidades.json do coletor) ----
+  function horaVivo() { return VIVO ? new Date(VIVO.gerado).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'}) : ''; }
+  const extraG = id => id === 'br' ? 'Brasil inclui o exterior e, em 2010, o voto em trânsito (eleitor votando fora do seu domicílio, que o TSE conta à parte). ' : 'Estados e regiões não incluem o voto em trânsito de 2010. ';
+  function reabrir() {
+    if (!$('hist').open || !ABERTO) return;
+    if (ABERTO.cod) { abrirHist(ABERTO.cod); return; }
+    const g = G.get(ABERTO.g); if (g) abrirSerie(g.nome, g.sub, serieH(g.h, g.v, g.val, VIVO && VIVO.g.get(g.id)), extraG(g.id));
+  }
+  function mostrarVivo() {
+    const el = $('aovivo'), b = VIVO && VIVO.g.get('br');
+    if (!b) { el.hidden = true; el.innerHTML = ''; return; }
+    const pct = b.ts ? 100 * b.st / b.ts : 0, completo = b.st >= b.ts;
+    el.innerHTML = completo
+      ? `<span><b>2º turno: apuração completa</b> · atualizado às ${horaVivo()}</span><span>Clique numa cidade, estado ou região para ver 2026 no histórico. Resultado e projeção: <a href="/">página principal</a>.</span>`
+      : `<span><span class="pisca" aria-hidden="true"></span> <b>2º turno ao vivo</b> · ${P(pct)}% das urnas apuradas no Brasil · atualizado às ${horaVivo()}</span><span>Clique numa cidade, estado ou região: 2026 aparece no histórico como <b>parcial</b> até 100% das urnas. Projeção: <a href="/">página principal</a>.</span>`;
+    el.hidden = false;
+  }
+  const UF_COD = new Map(M.map(m => [m.cod, m.uf]));
+  async function lerVivo() {
+    try {
+      const r = await fetch('/dados/cidades.json', {cache: 'no-cache'});
+      if (!r.ok) return;
+      const j = await r.json();
+      if (!j || j.ensaio || !Array.isArray(j.c)) return;          // ensaio (noite de 2022) não entra
+      const cid = new Map(), g = new Map();
+      const somar = (id, o) => { let s = g.get(id); if (!s) g.set(id, s = {st: 0, ts: 0, A: 0, B: 0}); s.st += o.st; s.ts += o.ts; s.A += o.A; s.B += o.B; };
+      for (const row of j.c) {
+        if (!Array.isArray(row) || row.length < 5) continue;
+        const o = {st: +row[1] || 0, ts: +row[2] || 0, A: +row[3] || 0, B: +row[4] || 0}, cod = +row[0];   // A = 13 (Lula), B = 22 (Flávio)
+        cid.set(cod, o); somar('br', o);
+        const uf = UF_COD.get(cod); if (!uf) continue;
+        if (uf === 'ZZ') somar('reg:EX', o); else { somar('uf:' + uf, o); somar('reg:' + REG[uf], o); }
+      }
+      const br = g.get('br');
+      const antes = VIVO;
+      VIVO = br && br.st > 0 ? {cid, g, gerado: +j.gerado || Date.now()} : null;   // antes de começar a apuração: nada muda
+      if (VIVO || antes) { mostrarVivo(); reabrir(); }
+    } catch (e) { /* sem o arquivo: a página segue como estava */ }
+  }
+  if (location.pathname.startsWith('/nova/')) {
+    let ult = 0;
+    const ciclo = () => { if (document.visibilityState === 'visible' && Date.now() - ult > 110000) { ult = Date.now(); lerVivo(); } };
+    ciclo(); setInterval(ciclo, 15000); document.addEventListener('visibilitychange', ciclo);
+  }
 
   desenhar();
 })();
