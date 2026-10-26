@@ -48,3 +48,11 @@ Página de teste /nova (modelo novo, desde 24/10/2026)
   - Bastidores: https://NOME/nova/painel.html (uso interno): principal × /nova lado a lado, saúde do coletor, do
     /nova, do gravador e do atualizador, e o termômetro de surpresa (quanto a projeção de cada estado e cidade
     mudou nos últimos 15/30/60 min e quanto isso puxou o Brasil; usa as fotos do gravador).
+
+Depois da eleição (26/10/2026)
+  - Com 100% das urnas, a página principal e o /nova mostram "Apuração encerrada" e não entram mais
+    em modo reserva; o coletor pode ser desligado sem mudar nada na tela:
+      sudo systemctl stop projecao-coletor && sudo systemctl disable projecao-coletor
+  - /nova/como-foi.html : balanço da noite (as duas projeções, o que cada uma anunciou e de onde veio o erro,
+    com a comparação urna por urna dos dados abertos do TSE de 26/10)
+  - /nova/ranking.html  : ranking com o 2º turno final gravado na página (não lê mais o coletor)

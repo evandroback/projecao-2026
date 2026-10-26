@@ -650,7 +650,9 @@ footer a { color: var(--fg); }
   }
   const ref26uf = uf => { const g = B.ref26.uf[uf]; return g ? l2de(g.pt, g.adv) : NaN; };
   // "Agora" na noite: no ensaio, o horário simulado do arquivo do TSE; ao vivo, o relógio do servidor (Brasília)
-  const minAgora = () => { const m = NAC && NAC.ensaio && NAC.tse ? minDeHora(NAC.tse.hg) : NaN; return Number.isFinite(m) ? m : minDepois17(agoraServidor()); };
+  // apuração encerrada (100% das seções): a página fica parada no fim da noite, sem modo reserva e com o horário do TSE
+  const fimApuracao = () => !!(NAC && !NAC.ensaio && NAC.br && NAC.br.ts > 0 && NAC.br.st >= NAC.br.ts);
+  const minAgora = () => { const m = NAC && (NAC.ensaio || fimApuracao()) && NAC.tse ? minDeHora(NAC.tse.hg) : NaN; return Number.isFinite(m) ? m : minDepois17(agoraServidor()); };
 
   // ---------- gráfico de linhas ----------
   function grafico(el, cfg) {
@@ -736,7 +738,7 @@ footer a { color: var(--fg); }
       NAC = n; falhas = 0;
       const idade = agoraServidor() - n.gerado;          // o coletor grava a cada ~8 s
       const tseIdade = n.saude && n.saude.ultimoOk ? agoraServidor() - n.saude.ultimoOk : 0;
-      if (!n.ensaio) {
+      if (!n.ensaio && !(n.br && n.br.ts > 0 && n.br.st >= n.br.ts)) {   // com a apuração encerrada, o coletor pode parar
         if (idade > 120000) motivo = motivo || 'coletor parado';
         else if (n.status === 'sem_acesso' || n.status === 'atrasado' || tseIdade > 120000) motivo = motivo || 'o servidor não está conseguindo ler o TSE';
       }
@@ -781,11 +783,12 @@ footer a { color: var(--fg); }
     const m = minAgora(), h1 = nac1tHora(m), p1 = h1 ? 100 * h1[0] / B.curvas.N : NaN;
     $('ritmo-agora').style.width = Math.min(100, p).toFixed(1) + '%';
     $('ritmo-1t').style.left = Math.min(100, p1 || 0).toFixed(1) + '%';
-    const hora = NAC && NAC.ensaio && NAC.tse && NAC.tse.hg ? NAC.tse.hg.slice(0, 5) : horaSP(agoraServidor());
+    const hora = NAC && (NAC.ensaio || fimApuracao()) && NAC.tse && NAC.tse.hg ? NAC.tse.hg.slice(0, 5) : horaSP(agoraServidor());
     $('ritmo-txt').innerHTML = m >= 0 ? `Às ${esc(hora)} do 1º turno, ${P(p1)} das urnas estavam apuradas.` : `Começa domingo, 25/10, às 17h (Brasília). No 1º turno, às 18h, ${P(100 * B.curvas.nacMin[60][0] / B.curvas.N)} das urnas estavam apuradas.`;
     let cls = 'vivo', txt = 'Ao vivo';
     if (NAC && NAC.ensaio) { cls = 'ensaio'; txt = SIM ? 'Simulação' : 'Ensaio'; }
     else if (reserva) { cls = 'reserva'; txt = 'Modo reserva'; }
+    else if (fimApuracao()) { cls = ''; txt = 'Apuração encerrada'; }
     else if (!br || br.st === 0) { cls = ''; txt = 'Aguardando a apuração'; }
     else if (NAC && NAC.status === 'atrasado') { cls = 'atraso'; txt = 'TSE demorando'; }
     $('situacao').className = 'situacao ' + cls;
@@ -799,6 +802,7 @@ footer a { color: var(--fg); }
   function pintarAtualizado() {
     if (SIM) { $('atualizado').textContent = TL ? 'momento da linha do tempo' : 'parado no fim da noite'; return; }
     if (!NAC || !(NAC.gerado || NAC.reservaHora)) return;
+    if (fimApuracao() && !reserva) { $('atualizado').textContent = 'resultado final' + (NAC.tse && NAC.tse.hg ? ' · TSE ' + NAC.tse.hg.slice(0, 5) : ''); return; }
     const s = Math.max(0, Math.round((reserva && NAC.reservaHora ? Date.now() - NAC.reservaHora : agoraServidor() - NAC.gerado) / 1000));
     $('atualizado').textContent = `atualizado há ${s < 60 ? s + ' s' : Math.floor(s / 60) + ' min'}`;
   }

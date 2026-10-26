@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Como as projeções do site acompanharam a apuração do 2º turno de 2026: o que cada modelo mostrou, quando acertou e de onde veio o erro, com a comparação urna por urna.">
+<title>Balanço da Projeção 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: relatório de uma coluna, como a página de apuração; um gráfico largo da noite e tabelas de apoio, números em fonte condensada. */
+:root {
+  --bg: #f3f3f1; --panel: #ffffff; --panel-2: #ebebe8; --line: #dcdcd7; --fg: #171717; --muted: #5d5d5d; --faint: #767676;
+  --flavio: #1f5fe0; --lula: #d2303a; --foco: #a86a0c; --faixa: rgba(23, 23, 23, .07);
+  --s-princ: #eb6834; --s-nova: #1baf7a; --s-urnas: #6250d6; --s-bruta: #8f8f88;
+  --f-num: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111111; --panel: #1a1a1a; --panel-2: #242424; --line: #2e2e2e; --fg: #f1f1f1; --muted: #a4a4a4; --faint: #808080;
+  --flavio: #5a94ff; --lula: #ff5a60; --foco: #f2b24c; --faixa: rgba(241, 241, 241, .08);
+  --s-princ: #d95926; --s-nova: #199e70; --s-urnas: #9085e9; --s-bruta: #7d7d77; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111111; --panel: #1a1a1a; --panel-2: #242424; --line: #2e2e2e; --fg: #f1f1f1; --muted: #a4a4a4; --faint: #808080;
+  --flavio: #5a94ff; --lula: #ff5a60; --foco: #f2b24c; --faixa: rgba(241, 241, 241, .08);
+  --s-princ: #d95926; --s-nova: #199e70; --s-urnas: #9085e9; --s-bruta: #7d7d77; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-ui); }
+.pagina { max-width: 1040px; margin: 0 auto; padding-block: 24px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 26px; }
+.pagina > * { min-width: 0; }
+h1 { font: 700 clamp(32px, 6vw, 50px)/1.02 var(--f-num); margin: 4px 0 0; text-wrap: balance; }
+h2 { font: 700 clamp(24px, 4vw, 30px)/1.1 var(--f-num); margin: 0; text-wrap: balance; }
+h3 { font-size: 15px; margin: 0; }
+p { margin: 0; max-width: 70ch; }
+.rot { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.lide { color: var(--muted); font-size: 16.5px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.l { color: var(--lula); } .f { color: var(--flavio); } .m { color: var(--muted); }
+section { display: grid; gap: 12px; }
+a { color: inherit; text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+
+/* placar */
+.placar { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.placar > div { background: var(--panel); border-radius: 10px; padding: 14px 16px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.placar b { font: 700 38px/1.05 var(--f-num); font-variant-numeric: tabular-nums; }
+.placar small { color: var(--muted); font-size: 13.5px; }
+.placar .faixa-ok { display: flex; gap: 8px; align-items: baseline; }
+
+/* gráfico */
+.quadro { background: var(--panel); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+.legenda { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13.5px; color: var(--muted); }
+.legenda span { display: inline-flex; align-items: center; gap: 7px; }
+.legenda i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; }
+.legenda i.ponto { width: 9px; height: 9px; border-radius: 50%; }
+.legenda i.banda { height: 10px; background: var(--faixa); border-top: 1.5px dashed var(--muted); border-radius: 0; }
+#grafico { position: relative; }
+#grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
+#grafico text { font-family: var(--f-ui); }
+.dica { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; box-shadow: 0 6px 18px rgba(0, 0, 0, .14); min-width: 190px; z-index: 2; }
+.dica b { font-family: var(--f-num); font-size: 15px; font-variant-numeric: tabular-nums; }
+.dica .linha { display: flex; justify-content: space-between; gap: 14px; }
+.dica i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+/* linha do tempo */
+.tempo { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; background: var(--panel); border-radius: 12px; }
+.tempo li { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--line); align-items: baseline; }
+.tempo li:first-child { border-top: 0; }
+.tempo .h { font: 600 19px/1.2 var(--f-num); font-variant-numeric: tabular-nums; }
+.tempo .marca { display: inline-block; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; margin-right: 6px; border: 1px solid currentColor; }
+.tempo .p { color: var(--s-princ); } .tempo .n { color: var(--s-nova); } .tempo .b { color: var(--muted); }
+
+/* tabelas */
+.tab-wrap { overflow-x: auto; background: var(--panel); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+caption { text-align: left; padding: 12px 12px 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+th, td { padding: 8px 10px; border-top: 1px solid var(--line); text-align: right; white-space: nowrap; }
+thead th { border-top: 0; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; vertical-align: bottom; white-space: normal; }
+th:first-child, td:first-child { text-align: left; }
+td.num { font-size: 17px; }
+tr.destaque td { background: var(--panel-2); }
+.forte { font-weight: 700; }
+.duas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+.duas > * { min-width: 0; }
+.caixa { background: var(--panel); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; }
+.caixa b.grande { font: 700 34px/1.05 var(--f-num); font-variant-numeric: tabular-nums; }
+details { background: var(--panel); border-radius: 12px; padding: 12px 16px; }
+details > summary { cursor: pointer; font-weight: 600; }
+details .tab-wrap { background: none; margin-top: 8px; }
+.nota { color: var(--muted); font-size: 13.5px; max-width: 80ch; }
+@media (max-width: 640px) { th, td { padding: 7px 7px; } td.num { font-size: 16px; } .tempo li { grid-template-columns: 52px 1fr; padding: 9px 12px; } }
+</style>
+
+<style>body { margin: 0; } html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }</style>
+</head>
+<body>
+<div class="pagina">
+  <header style="display:grid;gap:8px">
+    <div class="rot">Eleição presidencial · 2º turno · 25 de outubro de 2026</div>
+    <h1>Como foi a projeção da apuração</h1>
+    <p class="lide">A noite de domingo vista pelos dois modelos do site: a página principal e o modelo novo, que rodou em paralelo no /nova. Os números do TSE chegaram de minuto em minuto, e cada projeção tentou dizer, antes do fim, onde a contagem ia parar.</p>
+  </header>
+
+  <section class="placar" aria-label="Resumo">
+    <div><span class="rot">Resultado final (TSE)</span><b><span class="l">Lula 51,79%</span></b><small class="num" style="font-size:15px">64.256.232 × 59.826.041 votos de Flávio (48,21%)</small></div>
+    <div><span class="rot">Modelo novo (/nova)</span><b class="num">8,3% <small style="font-size:16px;font-family:var(--f-ui)">das urnas</small></b><small>Às 19h38 chegou a 0,3 ponto do resultado e não saiu mais. Anunciou “Lula vence” às 20h00, uma vez só.</small></div>
+    <div><span class="rot">Página principal</span><b class="num">40,0% <small style="font-size:16px;font-family:var(--f-ui)">das urnas</small></b><small>Firmou na mesma faixa às 20h20. Anunciou “Lula vence” às 19h24, desfez às 19h53 e anunciou de novo às 20h23.</small></div>
+  </section>
+
+  <section aria-labelledby="t-graf">
+    <h2 id="t-graf">A noite em um gráfico</h2>
+    <p>Fatia de Lula nos votos dos dois candidatos, de minuto em minuto. A faixa cinza é o resultado final com 0,3 ponto para cada lado. Passe o dedo ou o mouse sobre o gráfico para ver cada momento.</p>
+    <div class="quadro">
+      <div class="legenda" id="legenda"></div>
+      <div id="grafico" role="img" aria-label="Gráfico da fatia de Lula ao longo da noite: contagem do TSE, página principal, modelo novo e projeção com as mesmas urnas"></div>
+      <p class="nota" style="margin:0"><b>1</b> principal anuncia “Lula vence” (19h24) · <b>2</b> principal desfaz (19h53) · <b>3</b> modelo novo anuncia (20h00) · <b>4</b> principal anuncia de novo (20h23)</p>
+      <p class="nota" style="margin:0">Antes das 19h o gráfico não mostra nada: o TSE soltou um boletim às 17h06, com 0,25% das urnas, e parou até 19h05 porque a votação foi estendida até 19h. Depois das 21h30 as linhas já coincidem com o resultado.</p>
+    </div>
+    <details>
+      <summary>Ver os números do gráfico</summary>
+      <div class="tab-wrap"><table id="tab-graf"></table></div>
+    </details>
+  </section>
+
+  <section aria-labelledby="t-tempo">
+    <h2 id="t-tempo">O que cada um mostrou, e quando</h2>
+    <ol class="tempo" id="tempo">
+      <li><span class="h">17h06</span><span><span class="marca b">TSE</span>Primeiro boletim, com 0,25% das urnas, quase todas do exterior. Lula com 57,7% na contagem.</span></li>
+      <li><span class="h">19h05</span><span><span class="marca b">TSE</span>A contagem volta depois de duas horas parada. O STF tinha estendido a votação até 19h.</span></li>
+      <li><span class="h">19h24</span><span><span class="marca p">Principal</span>Anuncia “Lula vence” com 2,85% das urnas apuradas e Lula projetado em 52,5%.</span></li>
+      <li><span class="h">19h38</span><span><span class="marca n">Modelo novo</span>Entra na faixa de 0,3 ponto do resultado, com 8,3% das urnas, e não sai mais.</span></li>
+      <li><span class="h">19h45</span><span><span class="marca b">TSE</span>A contagem bruta passa a mostrar Flávio na frente (12,5% das urnas).</span></li>
+      <li><span class="h">19h53</span><span><span class="marca p">Principal</span>Desfaz o anúncio: a projeção caiu para 51,4% e a faixa de incerteza passou a incluir 50%.</span></li>
+      <li><span class="h">20h00</span><span><span class="marca n">Modelo novo</span>Anuncia “Lula vence” com 20,8% das urnas e Lula projetado em 52,0%. Não volta atrás.</span></li>
+      <li><span class="h">20h20</span><span><span class="marca p">Principal</span>Entra na faixa de 0,3 ponto do resultado, com 40,0% das urnas, e não sai mais.</span></li>
+      <li><span class="h">20h23</span><span><span class="marca p">Principal</span>Anuncia “Lula vence” de novo, com 42,6% das urnas.</span></li>
+      <li><span class="h">20h25</span><span><span class="marca b">TSE</span>Lula volta à frente na contagem bruta (45,1% das urnas).</span></li>
+      <li><span class="h">23h27</span><span><span class="marca b">TSE</span>100% das urnas: Lula 51,79%, Flávio 48,21%.</span></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="t-cedo">
+    <h2 id="t-cedo">Por que a página principal anunciou cedo demais</h2>
+    <p>O site anuncia “vence” quando a faixa de incerteza inteira fica acima de 50%. Às 19h24 a página principal projetava Lula com 52,5% e uma faixa de 50,5% a 54,6%. A faixa vinha de testes com apenas três noites de eleição, e nessas três o erro com 3% das urnas tinha sido pequeno. Nesta noite não foi: a projeção estava 0,8 ponto acima do resultado e, meia hora depois, 0,5 ponto abaixo. Quando a faixa passou a cruzar os 50%, o anúncio foi desfeito.</p>
+    <p>O modelo novo usava faixas calibradas em seis noites. No mesmo minuto, ele projetava quase o mesmo número, 52,5%, mas com faixa de 49,6% a 55,4%. Por isso esperou, e só anunciou às 20h00, quando já estava a 0,2 ponto do resultado.</p>
+  </section>
+
+  <section aria-labelledby="t-erro">
+    <h2 id="t-erro">De onde veio o erro</h2>
+    <p>Os dois modelos comparam o que chega de cada cidade com o 1º turno e estimam o que falta. O erro veio das cidades grandes com poucas urnas apuradas: as primeiras urnas de uma capital não se parecem com o resto dela. A página principal comparava essas urnas com o 1º turno da cidade inteira. O modelo novo supunha que as primeiras urnas do 2º turno eram as mesmas que chegaram primeiro em 4 de outubro.</p>
+    <div class="tab-wrap"><table>
+      <caption>Três cidades que puxaram o erro (Lula, % dos votos dos dois)</caption>
+      <thead><tr><th>Cidade</th><th>Horário</th><th>Urnas apuradas</th><th>Essas urnas no 2º turno</th><th>As mesmas urnas no 1º turno</th><th>Comparação da principal (1º turno da cidade)</th><th>Suposição do modelo novo</th><th>Principal projetou</th><th>Modelo novo projetou</th><th>Resultado final</th></tr></thead>
+      <tbody id="tab-cid"></tbody>
+    </table></div>
+    <p class="nota">Leitura de Macapá às 19h25: as 12 urnas tinham dado 78,1% a Lula também no 1º turno. Eram urnas de bairros lulistas, e Lula ganhou só 1,9 ponto nelas. A página principal comparou com os 47,9% da cidade inteira e entendeu uma virada de 32 pontos.</p>
+    <div class="duas">
+      <div class="tab-wrap"><table>
+        <caption>Quanto cada região puxou o erro do Brasil, página principal (pontos)</caption>
+        <thead id="cab-reg-p"></thead><tbody id="tab-reg-p"></tbody>
+      </table></div>
+      <div class="tab-wrap"><table>
+        <caption>Quanto cada região puxou o erro do Brasil, modelo novo (pontos)</caption>
+        <thead id="cab-reg-n"></thead><tbody id="tab-reg-n"></tbody>
+      </table></div>
+    </div>
+    <p class="nota">Positivo puxou a projeção para Lula além do resultado, negativo puxou para Flávio. Em negrito, 0,2 ponto ou mais. Das 19h25 às 19h35 o erro veio do Nordeste e do Norte; das 19h40 às 20h20, de São Paulo e do Rio, que começaram pelas urnas mais bolsonaristas. O modelo novo errou menos no Sudeste, mas não evitou o primeiro tropeço.</p>
+  </section>
+
+  <section aria-labelledby="t-urnas">
+    <h2 id="t-urnas">As mesmas urnas, comparadas uma a uma</h2>
+    <p>Na segunda, 26, o TSE publicou o resultado de cada urna nos dois turnos e o horário em que cada uma entrou na contagem. Com isso dá para refazer a noite sabendo exatamente quais urnas já tinham chegado em cada momento.</p>
+    <div class="duas">
+      <div class="tab-wrap"><table>
+        <caption>Lula nas urnas já apuradas (% dos votos dos dois)</caption>
+        <thead><tr><th>Horário</th><th>Urnas apuradas</th><th>2º turno</th><th>As mesmas urnas no 1º turno</th><th>Diferença</th></tr></thead>
+        <tbody id="tab-virada"></tbody>
+      </table></div>
+      <div style="display:grid;gap:14px">
+        <div class="caixa">
+          <span class="rot">A virada foi quase constante</span>
+          <p>Nas urnas que já tinham chegado, Lula esteve entre 2,4 e 2,8 pontos acima do 1º turno a noite inteira. No fim, a diferença no Brasil foi de 2,8 pontos (49,0% no 1º turno, 51,8% no 2º). A contagem mostrou Flávio na frente das 19h45 às 20h25 só porque as primeiras urnas eram de lugares onde ele já tinha ido melhor em 4 de outubro.</p>
+        </div>
+        <div class="caixa">
+          <span class="rot">As primeiras 179 urnas do Pará</span>
+          <b class="grande num" id="pa-num"></b>
+          <p id="pa-txt"></p>
+        </div>
+      </div>
+    </div>
+    <div class="duas">
+      <div class="caixa">
+        <span class="rot">A ordem de chegada mudou</span>
+        <p>No 1º turno, às 19h, 58% das urnas já tinham sido apuradas. No 2º, com a votação até 19h, eram 0,4%. Com 3% das urnas apuradas, só 48% delas estavam também entre as primeiras do 1º turno; com 20%, 62%. A suposição do modelo novo sobre a ordem de chegada valeu pela metade nesta noite.</p>
+      </div>
+      <div class="caixa">
+        <span class="rot">Se a projeção soubesse quais urnas chegaram</span>
+        <p>Refazendo a conta com as urnas exatas (pontos roxos no gráfico), a projeção teria ficado a 0,3 ponto do resultado desde 19h17, com 2% das urnas. Esse é o tamanho do ganho possível. Durante a apuração, os arquivos que o site lia do TSE diziam quantas urnas cada cidade tinha apurado, mas não quais.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-uf">
+    <h2 id="t-uf">Estado por estado</h2>
+    <p>Fatia de Lula nos votos dos dois, no 1º e no 2º turno, e o erro de cada modelo para o estado com 10% e 30% das urnas do Brasil apuradas.</p>
+    <div class="tab-wrap"><table>
+      <thead><tr><th>Estado</th><th>1º turno</th><th>2º turno</th><th>Variação</th><th>Erro com 10%, principal</th><th>Erro com 10%, modelo novo</th><th>Erro com 30%, principal</th><th>Erro com 30%, modelo novo</th></tr></thead>
+      <tbody id="tab-uf"></tbody>
+    </table></div>
+    <p class="nota">Erro médio dos estados: com 10% das urnas, 1,7 ponto na principal e 1,4 no modelo novo; com 30%, 0,9 e 0,7. O Amapá foi o pior dos dois modelos no começo, por causa de Macapá.</p>
+  </section>
+
+  <section aria-labelledby="t-metodo">
+    <h2 id="t-metodo">Como estas contas foram feitas</h2>
+    <p class="nota">Projeções: o que as duas páginas publicaram durante a noite, gravado pelo próprio site (199 fotos, de 17h06 à 0h23). Resultado: TSE, 100% das urnas. Urna por urna: arquivos de dados abertos do TSE publicados em 26/10/2026 (votação por seção e detalhe da apuração por seção, com o horário em que cada urna entrou na contagem); os totais desses arquivos batem com o resultado oficial. “% dos votos dos dois” é a fatia de Lula na soma de Lula e Flávio. A projeção com as mesmas urnas aplica a cada cidade a diferença entre o 2º e o 1º turno das urnas que já tinham chegado; cidades sem urnas usam a do estado.</p>
+    <p class="nota"><a href="https://64-181-167-66.sslip.io/">Página principal da apuração</a> · <a href="https://64-181-167-66.sslip.io/nova/ranking.html">Ranking das cidades</a></p>
+  </section>
+</div>
+
+<script type="application/json" id="dados">{"final":{"l2":51.785,"A":64256232,"B":59826041,"l1":48.989},"P":[[125.8,0.51,52.27,52.072],[126.2,0.72,52.27,51.878],[127.7,0.85,52.158,51.791],[128.8,1.07,52.155,52.224],[130.3,1.26,52.142,52.322],[131.5,1.55,52.132,52.548],[133,1.64,52.093,52.59],[134.5,1.67,52.106,52.604],[136,1.74,52.094,52.597],[137.5,1.83,51.779,52.555],[139,1.97,51.662,52.507],[140.5,2.17,51.492,52.513],[142,2.31,51.492,52.575],[143.1,2.51,51.326,52.495],[144.1,2.71,51.305,52.505],[144.8,2.94,51.341,52.558],[145.7,3.14,51.282,52.696],[146.5,3.34,51.195,52.77],[147.4,3.64,51.264,52.719],[148,3.85,51.175,52.692],[148.8,4.05,51.192,52.744],[149.3,4.26,51.219,52.682],[149.9,4.46,51.158,52.689],[150.4,4.67,51.131,52.669],[151.1,4.92,51.011,52.742],[151.8,5.13,51.023,52.71],[152.5,5.35,50.854,52.598],[152.8,5.62,50.854,52.596],[153.5,5.96,50.826,52.64],[154.1,6.18,50.805,52.641],[154.5,6.38,50.759,52.607],[154.8,6.67,50.759,52.609],[155.2,6.88,50.683,52.518],[155.6,7.08,50.638,52.474],[156,7.28,50.638,52.466],[156.3,7.49,50.546,52.461],[156.6,7.71,50.546,52.414],[157.1,7.93,50.549,52.406],[157.3,8.13,50.549,52.391],[157.8,8.34,50.492,51.9],[158.3,8.55,50.435,51.897],[158.6,8.77,50.481,51.852],[159.1,9,50.481,51.865],[159.3,9.22,50.481,51.859],[159.8,9.43,50.456,51.56],[160.3,9.64,50.414,51.537],[160.6,9.85,50.414,51.505],[161.1,10.08,50.378,51.483],[161.6,10.29,50.357,51.481],[161.7,10.49,50.357,51.468],[162.1,10.7,50.333,51.503],[162.6,10.92,50.333,51.458],[163.1,11.13,50.333,51.459],[163.4,11.36,50.276,51.473],[163.8,11.6,50.233,51.494],[164.2,11.86,50.198,51.474],[164.5,12.08,50.12,51.486],[165,12.31,50.051,51.478],[165.4,12.54,49.989,51.449],[165.9,12.75,49.989,51.443],[166.3,12.95,49.966,51.469],[166.5,13.18,49.966,51.475],[167,13.39,49.975,51.479],[167.4,13.62,49.955,51.478],[167.8,13.83,49.961,51.47],[168.3,14.06,49.917,51.447],[168.5,14.29,49.904,51.459],[169,14.5,49.904,51.456],[169.5,14.7,49.904,51.442],[169.8,14.9,49.904,51.409],[170.5,15.12,49.904,51.402],[172.1,15.25,49.904,51.391],[173.5,15.47,49.755,51.358],[174,15.69,49.761,51.355],[174.4,15.9,49.725,51.358],[174.6,16.1,49.725,51.356],[174.8,16.31,49.725,51.349],[175.1,16.51,49.678,51.359],[175.4,16.72,49.678,51.341],[175.7,16.93,49.655,51.279],[175.9,17.13,49.652,51.312],[176.3,17.39,49.652,51.32],[176.6,17.61,49.606,51.326],[176.9,17.83,49.606,51.319],[177.2,18.04,49.567,51.322],[177.4,18.26,49.591,51.309],[177.7,18.52,49.591,51.239],[178,18.72,49.591,51.449],[178.3,18.94,49.555,51.454],[178.5,19.14,49.511,51.448],[178.8,19.39,49.511,51.448],[179.2,19.6,49.497,51.438],[179.4,19.8,49.497,51.423],[179.7,20.03,49.513,51.409],[180,20.24,49.513,51.42],[180.3,20.49,49.531,51.428],[180.6,20.74,49.538,51.429],[180.9,20.94,49.529,51.39],[181.2,21.19,49.529,51.389],[181.6,21.41,49.531,51.385],[181.9,21.63,49.531,51.4],[182.1,21.83,49.531,51.395],[182.3,22.05,49.531,51.403],[182.7,22.26,49.509,51.404],[182.9,22.47,49.509,51.399],[183.2,22.69,49.508,51.39],[183.5,22.9,49.488,51.366],[183.8,23.1,49.488,51.377],[184,23.31,49.488,51.422],[184.2,23.54,49.49,51.422],[184.4,23.77,49.49,51.421],[184.6,23.97,49.547,51.423],[184.8,24.23,49.547,51.394],[185.1,24.44,49.541,51.383],[185.3,24.67,49.541,51.41],[185.6,24.88,49.541,51.418],[185.8,25.08,49.554,51.407],[186.1,25.3,49.544,51.402],[186.3,25.53,49.544,51.404],[186.4,25.74,49.544,51.416],[186.7,25.95,49.566,51.415],[186.9,26.2,49.566,51.411],[187.1,26.4,49.553,51.422],[187.3,26.61,49.553,51.416],[187.5,26.82,49.544,51.462],[187.8,27.04,49.544,51.452],[188.1,27.26,49.533,51.458],[188.3,27.47,49.533,51.448],[188.5,27.71,49.555,51.449],[188.7,27.96,49.555,51.472],[188.9,28.19,49.534,51.457],[189.2,28.39,49.534,51.454],[189.5,28.6,49.534,51.457],[189.7,28.83,49.561,51.436],[190,29.05,49.561,51.46],[190.2,29.37,49.57,51.456],[190.3,29.57,49.57,51.441],[190.6,29.81,49.555,51.453],[190.8,30.06,49.555,51.434],[191,30.27,49.58,51.434],[191.2,30.48,49.58,51.433],[191.6,30.69,49.603,51.416],[191.8,30.93,49.603,51.436],[192,31.15,49.603,51.431],[192.3,31.38,49.63,51.432],[192.5,31.64,49.669,51.455],[192.7,31.85,49.669,51.458],[192.9,32.07,49.669,51.471],[193.1,32.27,49.678,51.471],[193.3,32.52,49.678,51.48],[193.5,32.73,49.678,51.482],[193.7,32.95,49.704,51.456],[193.9,33.18,49.704,51.452],[194.1,33.43,49.701,51.48],[194.3,33.7,49.701,51.471],[194.5,33.93,49.701,51.453],[194.7,34.18,49.674,51.483],[194.9,34.45,49.674,51.478],[195.1,34.67,49.684,51.477],[195.4,34.91,49.684,51.493],[195.6,35.13,49.702,51.495],[195.8,35.38,49.702,51.472],[196.1,35.59,49.701,51.481],[196.3,35.81,49.701,51.472],[196.5,36.04,49.715,51.464],[196.7,36.24,49.715,51.456],[197.1,36.45,49.74,51.467],[197.2,36.66,49.74,51.465],[197.5,36.87,49.74,51.472],[197.7,37.12,49.771,51.499],[197.8,37.34,49.771,51.494],[198,37.58,49.78,51.503],[198.2,37.81,49.78,51.494],[198.4,38.03,49.78,51.457],[198.6,38.26,49.797,51.479],[198.8,38.48,49.797,51.473],[199,38.69,49.814,51.479],[199.2,38.91,49.814,51.502],[199.4,39.16,49.814,51.495],[199.6,39.36,49.828,51.492],[199.9,39.57,49.828,51.478],[200.1,39.78,49.828,51.483],[200.4,40.03,49.828,51.506],[200.5,40.27,49.832,51.519],[200.7,40.49,49.832,51.523],[201,40.7,49.851,51.529],[201.1,40.93,49.851,51.532],[201.2,41.14,49.851,51.563],[201.5,41.34,49.851,51.551],[201.8,41.57,49.87,51.549],[202,41.78,49.863,51.553],[202.3,41.99,49.863,51.563],[202.5,42.24,49.863,51.551],[202.8,42.46,49.894,51.556],[203,42.71,49.919,51.582],[203.1,42.93,49.919,51.582],[203.4,43.16,49.919,51.644],[203.7,43.41,49.95,51.651],[203.9,43.66,49.95,51.661],[204.1,43.9,49.975,51.66],[204.3,44.11,49.975,51.657],[204.5,44.37,49.989,51.651],[204.7,44.63,49.989,51.655],[204.9,44.85,49.989,51.655],[205,45.11,50.004,51.679],[205.3,45.34,50.004,51.642],[205.5,45.54,50.004,51.638],[205.7,45.75,50.011,51.637],[206,45.98,50.034,51.639],[206.2,46.19,50.034,51.647],[206.4,46.41,50.054,51.641],[206.6,46.65,50.054,51.64],[206.8,46.86,50.054,51.632],[207,47.11,50.054,51.643],[207.1,47.41,50.054,51.641],[207.3,47.65,50.091,51.639],[207.5,47.87,50.091,51.639],[207.8,48.09,50.14,51.646],[208,48.32,50.149,51.648],[208.2,48.58,50.149,51.643],[208.4,48.8,50.149,51.656],[208.6,49.04,50.151,51.649],[208.8,49.25,50.151,51.655],[209,49.61,50.163,51.647],[209.3,49.85,50.163,51.653],[209.5,50.05,50.163,51.656],[209.7,50.26,50.189,51.653],[209.9,50.52,50.189,51.65],[210,50.75,50.229,51.656],[210.2,51.01,50.229,51.657],[210.3,51.21,50.229,51.663],[210.5,51.44,50.229,51.663],[210.8,51.65,50.268,51.662],[211,51.97,50.268,51.662],[211.2,52.18,50.312,51.664],[211.4,52.43,50.312,51.636],[211.5,52.65,50.312,51.641],[211.8,52.91,50.353,51.641],[212,53.16,50.353,51.632],[212.3,53.4,50.374,51.639],[212.5,53.64,50.374,51.637],[212.8,53.88,50.394,51.637],[213,54.09,50.411,51.668],[213.2,54.32,50.411,51.658],[213.5,54.56,50.411,51.659],[213.7,54.77,50.411,51.656],[213.8,54.99,50.411,51.657],[214,55.22,50.446,51.654],[214.2,55.56,50.446,51.66],[214.4,55.83,50.484,51.659],[214.6,56.03,50.484,51.673],[214.8,56.24,50.484,51.676],[215,56.49,50.484,51.682],[215.2,56.72,50.496,51.679],[215.4,56.94,50.496,51.678],[215.5,57.32,50.519,51.695],[215.8,57.58,50.519,51.712],[215.9,57.86,50.519,51.716],[216.1,58.07,50.519,51.704],[216.3,58.28,50.519,51.706],[216.5,58.48,50.519,51.706],[216.7,58.69,50.546,51.699],[216.9,59.06,50.546,51.702],[217,59.28,50.546,51.695],[217.3,59.49,50.546,51.696],[217.5,59.71,50.574,51.698],[217.8,59.92,50.574,51.696],[217.9,60.14,50.574,51.694],[218.1,60.36,50.574,51.702],[218.3,60.58,50.574,51.704],[218.5,60.8,50.6,51.726],[218.7,61.01,50.6,51.714],[218.8,61.24,50.6,51.72],[219,61.44,50.642,51.721],[219.2,61.64,50.642,51.72],[219.5,61.86,50.688,51.764],[219.7,62.08,50.688,51.764],[219.9,62.28,50.688,51.77],[220.1,62.49,50.715,51.767],[220.2,62.79,50.715,51.758],[220.4,63.02,50.715,51.759],[220.6,63.27,50.751,51.77],[220.7,63.49,50.751,51.775],[220.9,63.71,50.751,51.777],[221.1,63.94,50.792,51.78],[221.3,64.16,50.792,51.786],[221.5,64.36,50.792,51.788],[221.7,64.57,50.823,51.791],[221.9,64.9,50.823,51.799],[222.1,65.17,50.848,51.791],[222.3,65.38,50.848,51.804],[222.5,65.6,50.851,51.81],[222.6,65.81,50.851,51.808],[222.8,66.04,50.851,51.807],[223,66.33,50.875,51.808],[223.2,66.56,50.875,51.81],[223.5,66.77,50.875,51.819],[223.7,67,50.898,51.822],[223.8,67.24,50.898,51.825],[224,67.45,50.9,51.825],[224.3,67.67,50.9,51.825],[224.5,68,50.917,51.823],[224.7,68.24,50.917,51.818],[224.9,68.48,50.917,51.82],[225.1,68.69,50.917,51.821],[225.3,68.9,50.924,51.818],[225.6,69.12,50.953,51.822],[225.9,69.38,50.953,51.823],[225.9,69.6,50.971,51.825],[226.3,69.81,51.004,51.806],[226.6,70.05,51.004,51.806],[226.8,70.29,51.004,51.806],[227,70.52,51.011,51.807],[227.2,70.72,51.011,51.806],[227.3,70.93,51.011,51.811],[227.5,71.14,51.011,51.812],[227.6,71.36,51.028,51.8],[227.8,71.6,51.028,51.803],[228,72.06,51.028,51.798],[228.2,72.28,51.028,51.799],[228.4,72.5,51.028,51.806],[228.5,72.71,51.078,51.793],[228.8,72.93,51.078,51.797],[229,73.17,51.09,51.793],[229.3,73.39,51.09,51.801],[229.5,73.59,51.114,51.803],[229.7,73.8,51.114,51.797],[230,74.03,51.114,51.798],[230.2,74.25,51.114,51.802],[230.4,74.49,51.114,51.8],[230.5,74.82,51.173,51.808],[230.7,75.05,51.173,51.812],[231,75.27,51.173,51.814],[231.3,75.47,51.173,51.815],[231.4,75.68,51.173,51.819],[231.6,75.88,51.173,51.82],[231.8,76.09,51.209,51.824],[231.9,76.37,51.209,51.831],[232.1,76.6,51.209,51.832],[232.3,76.86,51.209,51.836],[232.3,77.13,51.209,51.841],[232.5,77.34,51.209,51.838],[232.8,77.58,51.238,51.837],[233.2,77.82,51.251,51.838],[233.4,78.03,51.251,51.838],[233.7,78.33,51.272,51.841],[233.8,78.53,51.272,51.831],[234,78.75,51.311,51.826],[234.2,79.16,51.311,51.83],[234.3,79.41,51.311,51.834],[234.6,79.66,51.324,51.836],[234.7,79.87,51.324,51.839],[234.9,80.08,51.324,51.838],[235.1,80.31,51.356,51.84],[235.2,80.52,51.356,51.844],[235.3,80.76,51.356,51.846],[235.5,80.98,51.375,51.844],[235.7,81.2,51.375,51.846],[236,81.41,51.375,51.849],[236.2,81.72,51.382,51.846],[236.4,81.94,51.382,51.848],[236.6,82.19,51.382,51.847],[236.8,82.4,51.395,51.839],[237.1,82.61,51.405,51.833],[237.3,82.86,51.405,51.837],[237.5,83.09,51.42,51.841],[237.8,83.31,51.42,51.836],[237.8,83.51,51.42,51.828],[238.1,83.73,51.431,51.818],[238.4,83.95,51.431,51.821],[238.6,84.16,51.44,51.824],[238.8,84.37,51.44,51.829],[238.9,84.62,51.44,51.828],[239.1,84.91,51.449,51.823],[239.2,85.11,51.449,51.823],[239.4,85.37,51.449,51.828],[239.7,85.69,51.471,51.821],[239.7,85.9,51.471,51.817],[240,86.11,51.5,51.818],[240.3,86.34,51.5,51.818],[240.5,86.59,51.518,51.813],[240.8,86.81,51.518,51.814],[241.2,87.04,51.524,51.811],[241.4,87.27,51.535,51.813],[241.5,87.51,51.535,51.817],[241.7,87.76,51.535,51.819],[241.9,87.99,51.535,51.819],[242.1,88.2,51.556,51.82],[242.3,88.42,51.556,51.82],[242.5,88.66,51.58,51.819],[242.7,88.87,51.58,51.815],[243,89.09,51.595,51.81],[243.2,89.32,51.595,51.808],[243.4,89.53,51.595,51.81],[243.6,89.78,51.622,51.818],[243.7,90,51.622,51.816],[244,90.25,51.622,51.81],[244.2,90.48,51.624,51.809],[244.5,90.7,51.624,51.808],[244.6,90.95,51.624,51.81],[244.9,91.17,51.624,51.809],[245,91.43,51.663,51.807],[245.1,91.7,51.663,51.806],[245.3,91.92,51.663,51.809],[245.6,92.14,51.673,51.81],[245.7,92.45,51.673,51.801],[246,92.69,51.673,51.805],[246.2,92.9,51.69,51.809],[246.5,93.34,51.698,51.808],[246.8,93.59,51.698,51.81],[246.8,93.81,51.698,51.807],[247.1,94.04,51.719,51.803],[247.4,94.25,51.721,51.8],[247.7,94.47,51.721,51.8],[247.8,94.68,51.721,51.796],[248,94.95,51.729,51.798],[248.2,95.17,51.729,51.798],[248.5,95.38,51.725,51.801],[248.8,95.61,51.725,51.801],[248.9,95.9,51.741,51.791],[249.1,96.11,51.741,51.792],[249.5,96.33,51.741,51.795],[249.8,96.56,51.737,51.797],[250.1,96.76,51.746,51.796],[250.3,96.97,51.746,51.797],[250.5,97.49,51.746,51.796],[250.6,97.84,51.751,51.798],[251,98.05,51.748,51.799],[251.3,98.27,51.748,51.799],[251.4,98.62,51.748,51.792],[251.5,98.91,51.75,51.786],[251.9,99.13,51.753,51.785],[252.3,99.35,51.753,51.786],[252.6,99.55,51.753,51.785],[253.6,99.75,51.754,51.781],[255.2,99.76,51.756,51.782],[256.7,99.78,51.76,51.782],[258.2,99.78,51.76,51.783],[259.8,99.79,51.762,51.783],[261.3,99.81,51.761,51.784],[262.8,99.82,51.76,51.784],[264.3,99.84,51.763,51.784],[265.9,99.85,51.763,51.784],[267.4,99.86,51.763,51.784],[269,99.87,51.764,51.784],[270.6,99.88,51.765,51.785],[272.1,99.89,51.766,51.784],[273.8,99.89,51.767,51.784],[275.6,99.9,51.767,51.784],[277.1,99.9,51.767,51.784],[278.8,99.9,51.767,51.784],[280.3,99.9,51.768,51.785],[281.8,99.91,51.77,51.784],[283.3,99.91,51.772,51.784],[284.9,99.92,51.774,51.784],[286.4,99.93,51.775,51.784],[287.9,99.94,51.777,51.785],[289.4,99.95,51.778,51.785],[291.2,99.95,51.779,51.785],[292.8,99.96,51.779,51.784],[294.5,99.96,51.78,51.784],[296,99.96,51.781,51.784],[297.6,99.96,51.781,51.784],[299.4,99.97,51.781,51.785],[301,99.98,51.782,51.785],[302.8,99.98,51.782,51.785],[304.3,99.98,51.782,51.785],[306.3,99.98,51.783,51.785],[308.2,99.98,51.783,51.785],[309.7,99.98,51.783,51.785],[311.2,99.98,51.783,51.785],[313,99.98,51.783,51.785],[314.8,99.98,51.783,51.785],[316.3,99.99,51.784,51.785],[318,99.99,51.784,51.785],[319.5,99.99,51.784,51.785],[321.3,99.99,51.784,51.785],[323,99.99,51.784,51.785],[324.6,99.99,51.784,51.785],[326.1,99.99,51.784,51.785],[327.7,99.99,51.784,51.785],[329.2,99.99,51.784,51.785],[330.7,99.99,51.784,51.785],[332.2,99.99,51.785,51.785],[333.9,100,51.785,51.785],[335.5,100,51.785,51.785],[337.2,100,51.785,51.785],[338.7,100,51.785,51.785],[340.4,100,51.785,51.785],[342,100,51.785,51.785],[343.5,100,51.785,51.785],[345.2,100,51.785,51.785],[346.7,100,51.785,51.785],[348.6,100,51.785,51.785],[350.1,100,51.785,51.785],[351.6,100,51.785,51.785],[353.1,100,51.785,51.785],[354.6,100,51.785,51.785],[356.1,100,51.785,51.785],[357.6,100,51.785,51.785],[359.1,100,51.785,51.785]],"N":[[125.9,0.51,52.104],[126.4,0.75,51.917],[127.9,0.85,51.988],[128.9,1.08,52.204],[130.4,1.27,52.294],[131.6,1.56,52.483],[133.1,1.64,52.517],[134.6,1.67,52.498],[136.1,1.75,52.509],[137.6,1.84,52.503],[139.1,1.98,52.467],[140.6,2.17,52.49],[142.1,2.33,52.505],[143.4,2.54,52.413],[144.4,2.76,52.494],[145.1,2.99,52.565],[146.4,3.25,52.717],[147.2,3.48,52.636],[147.7,3.7,52.655],[148.4,3.91,52.653],[148.9,4.11,52.653],[149.7,4.31,52.61],[150.2,4.53,52.64],[150.9,4.83,52.613],[151.7,5.09,52.624],[152.4,5.31,52.573],[152.9,5.63,52.561],[153.7,5.97,52.586],[154.2,6.18,52.62],[154.6,6.48,52.616],[154.9,6.74,52.615],[155.4,6.95,52.56],[155.9,7.19,52.531],[156.4,7.49,52.568],[156.6,7.71,52.528],[157.1,7.96,52.537],[157.6,8.26,52.062],[158.1,8.52,52.039],[158.6,8.77,51.994],[159.1,9.03,52.004],[159.4,9.25,52.022],[159.9,9.45,51.881],[160.4,9.74,51.862],[161.1,10.08,51.797],[161.6,10.36,51.797],[161.9,10.57,51.809],[162.4,10.82,51.745],[162.9,11.03,51.74],[163.4,11.31,51.781],[163.9,11.63,51.806],[164.4,11.97,51.784],[164.9,12.23,51.774],[165.4,12.54,51.762],[165.9,12.75,51.796],[166.4,13.01,51.836],[166.6,13.24,51.909],[167.1,13.45,51.911],[167.7,13.7,51.903],[168.2,13.98,51.857],[168.4,14.19,51.857],[168.9,14.47,51.864],[169.7,14.77,51.842],[170.2,14.97,51.803],[170.9,15.19,51.799],[172.4,15.26,51.801],[173.7,15.5,51.716],[174.2,15.75,51.72],[174.7,16.1,51.717],[174.9,16.37,51.718],[175.4,16.68,51.705],[175.9,17.11,51.855],[176.4,17.46,51.85],[176.9,17.83,51.867],[177.4,18.22,51.856],[177.9,18.64,51.98],[178.4,19.02,51.995],[178.9,19.41,51.983],[179.4,19.8,51.959],[179.9,20.14,51.946],[180.4,20.55,51.978],[180.7,20.76,51.972],[181.2,21.12,51.933],[181.7,21.51,51.934],[182.2,21.89,51.927],[182.7,22.23,51.924],[182.9,22.45,51.924],[183.4,22.85,51.894],[183.9,23.16,51.879],[184.2,23.49,51.982],[184.4,23.77,51.984],[184.7,24,51.986],[184.9,24.28,51.952],[185.4,24.7,51.954],[185.7,24.96,51.942],[186.2,25.34,51.949],[186.4,25.67,51.924],[186.7,25.95,51.915],[186.9,26.2,51.904],[187.2,26.42,51.906],[187.4,26.71,51.95],[187.7,26.92,51.964],[188.2,27.36,51.933],[188.4,27.58,51.926],[188.7,27.9,51.955],[188.9,28.12,51.943],[189.2,28.37,51.941],[189.7,28.73,51.946],[189.9,28.96,51.961],[190.2,29.37,51.967],[190.4,29.66,51.96],[190.7,29.87,51.957],[190.9,30.15,51.939],[191.2,30.38,51.935],[191.4,30.59,51.933],[191.9,31.02,51.931],[192.2,31.24,51.936],[192.4,31.58,51.949],[192.7,31.85,51.95],[192.9,32.13,51.958],[193.2,32.38,51.962],[193.4,32.65,51.972],[193.7,32.87,51.942],[193.9,33.18,51.941],[194.2,33.51,51.953],[194.4,33.82,51.953],[194.7,34.18,51.961],[194.9,34.48,51.963],[195.2,34.71,51.958],[195.4,34.94,51.963],[195.7,35.18,51.957],[195.9,35.44,51.939],[196.4,35.86,51.942],[196.7,36.17,51.887],[197.2,36.52,51.898],[197.4,36.83,51.904],[197.7,37.12,51.932],[197.9,37.49,51.931],[198.2,37.75,51.919],[198.4,38.03,51.898],[198.7,38.29,51.909],[198.9,38.59,51.915],[199.2,38.91,51.945],[199.4,39.2,51.94],[199.9,39.61,51.915],[200.2,39.82,51.919],[200.4,40.08,51.935],[200.7,40.41,51.953],[200.9,40.66,51.967],[201.2,41.05,51.973],[201.4,41.28,51.994],[201.7,41.51,51.987],[201.9,41.71,51.995],[202.2,41.93,52.001],[202.4,42.16,51.992],[202.7,42.38,51.98],[202.9,42.59,52.017],[203.2,42.97,52.013],[203.7,43.41,52.047],[203.9,43.7,52.053],[204.2,43.97,52.054],[204.4,44.2,52.056],[204.7,44.56,52.043],[204.9,44.91,52.044],[205.2,45.21,52.077],[205.4,45.47,52.064],[205.7,45.7,52.05],[205.9,45.92,52.053],[206.2,46.19,52.061],[206.4,46.45,52.053],[206.7,46.74,52.038],[206.9,47.06,52.036],[207.2,47.5,52.049],[207.4,47.81,52.05],[207.7,48.02,52.052],[208,48.29,52.058],[208.2,48.58,52.05],[208.5,48.8,52.055],[208.7,49.08,52.047],[209,49.34,52.054],[209.2,49.73,52.038],[209.5,49.99,52.036],[209.7,50.24,52.029],[210,50.61,52.026],[210.2,51.01,52.037],[210.5,51.31,52.039],[210.7,51.57,52.041],[211,51.83,52.032],[211.2,52.18,52.052],[211.5,52.47,52.017],[211.7,52.78,52.018],[212,53.05,52.027],[212.2,53.3,52.03],[212.5,53.54,52.031],[212.7,53.75,52.025],[213,54.01,52.035],[213.2,54.27,52.026],[213.5,54.51,52.028],[213.7,54.77,52.019],[214,55.07,52.02],[214.2,55.39,52.011],[214.4,55.83,52.006],[214.7,56.15,52.02],[214.9,56.42,52.017],[215.2,56.69,52.012],[215.4,56.94,52.013],[215.7,57.44,52.029],[215.9,57.86,52.028],[216.2,58.09,52.02],[216.4,58.42,52.021],[216.7,58.65,52.017],[216.9,59.06,52.004],[217.2,59.39,51.998],[217.4,59.6,51.994],[217.7,59.82,51.995],[217.9,60.14,51.985],[218.2,60.47,51.993],[218.4,60.72,52.022],[218.7,61.01,52.005],[218.9,61.36,51.999],[219.2,61.64,51.995],[219.7,62.08,52.007],[219.9,62.3,52.011],[220.2,62.79,52.001],[220.4,63.05,52],[220.7,63.45,51.998],[220.9,63.76,51.998],[221.2,64.05,52.025],[221.4,64.27,52.024],[221.7,64.53,52.025],[221.9,64.93,52.023],[222.2,65.25,52.015],[222.4,65.55,52.012],[222.7,65.88,52.019],[222.9,66.11,52.011],[223.2,66.52,52.009],[223.4,66.74,52.017],[223.7,67,52.018],[223.9,67.32,52.017],[224.2,67.59,52.014],[224.7,68.2,52.005],[224.9,68.48,52.005],[225.2,68.81,52.001],[225.7,69.2,52.004],[225.9,69.6,52.001],[226.4,69.89,51.983],[226.7,70.15,51.981],[226.9,70.36,51.983],[227.2,70.72,51.973],[227.5,71.09,51.987],[227.7,71.41,51.976],[228,71.75,51.973],[228.2,72.23,51.963],[228.5,72.6,51.968],[228.7,72.81,51.955],[229,73.03,51.951],[229.2,73.27,51.949],[229.5,73.48,51.951],[229.7,73.76,51.942],[230,73.98,51.942],[230.2,74.25,51.943],[230.5,74.56,51.942],[230.7,75.05,51.941],[231.2,75.42,51.941],[231.5,75.68,51.944],[231.7,75.98,51.944],[232,76.37,51.948],[232.2,76.71,51.942],[232.5,77.21,51.954],[232.7,77.5,51.94],[233.2,77.85,51.937],[233.5,78.05,51.935],[233.7,78.33,51.936],[234,78.7,51.913],[234.2,79.23,51.914],[234.5,79.54,51.915],[234.7,79.78,51.92],[235,80.08,51.92],[235.2,80.52,51.921],[235.5,80.9,51.918],[235.7,81.16,51.92],[236,81.38,51.921],[236.2,81.6,51.921],[236.5,81.98,51.924],[236.7,82.31,51.912],[237.2,82.67,51.904],[237.5,83.04,51.911],[238,83.6,51.892],[238.5,83.95,51.874],[238.7,84.29,51.879],[239,84.62,51.875],[239.2,85.01,51.868],[239.5,85.37,51.875],[239.7,85.75,51.873],[240,86.06,51.864],[240.5,86.59,51.855],[241,86.87,51.854],[241.5,87.46,51.853],[241.7,87.79,51.856],[242,88.04,51.853],[242.2,88.29,51.852],[242.5,88.54,51.847],[242.7,88.91,51.84],[243.2,89.32,51.833],[243.5,89.6,51.838],[243.7,89.95,51.841],[244,90.18,51.832],[244.2,90.48,51.832],[244.5,90.7,51.829],[244.7,91.05,51.827],[245,91.31,51.824],[245.2,91.84,51.818],[245.7,92.45,51.807],[246,92.69,51.81],[246.2,92.9,51.815],[246.7,93.48,51.816],[247,93.9,51.807],[247.2,94.11,51.805],[247.5,94.32,51.801],[248,94.95,51.806],[248.5,95.26,51.805],[248.7,95.49,51.804],[249,95.95,51.796],[249.5,96.33,51.796],[250,96.69,51.795],[250.5,97.49,51.801],[250.7,97.94,51.803],[251.2,98.22,51.802],[251.5,98.68,51.798],[251.7,98.94,51.793],[252,99.18,51.788],[252.5,99.51,51.79],[253.5,99.72,51.786],[255,99.76,51.785],[256.5,99.77,51.786],[258,99.78,51.786],[259.5,99.79,51.786],[261,99.81,51.787],[262.5,99.82,51.787],[264,99.83,51.787],[265.5,99.85,51.787],[267,99.86,51.787],[268.5,99.86,51.787],[270,99.88,51.787],[271.5,99.88,51.786],[273,99.89,51.787],[274.5,99.89,51.786],[276,99.9,51.786],[277.5,99.9,51.786],[279,99.9,51.786],[280.5,99.9,51.786],[282.2,99.91,51.786],[283.7,99.91,51.786],[285.3,99.93,51.786],[286.8,99.93,51.786],[288.3,99.94,51.786],[289.8,99.95,51.786],[291.3,99.95,51.786],[292.8,99.96,51.785],[294.5,99.96,51.785],[296,99.96,51.785],[297.5,99.96,51.785],[299,99.97,51.785],[300.5,99.97,51.785],[302,99.98,51.785],[303.5,99.98,51.785],[305,99.98,51.785],[306.8,99.98,51.785],[308.3,99.98,51.785],[309.8,99.98,51.785],[311.3,99.98,51.785],[312.8,99.98,51.785],[314.3,99.98,51.785],[315.8,99.99,51.785],[317.3,99.99,51.785],[318.8,99.99,51.785],[320.5,99.99,51.785],[322,99.99,51.785],[323.5,99.99,51.785],[325,99.99,51.785],[326.5,99.99,51.785],[328,99.99,51.785],[329.5,99.99,51.785],[331,99.99,51.785],[332.8,99.99,51.785],[334.3,100,51.785],[335.8,100,51.785],[337.3,100,51.785],[338.8,100,51.785],[340.3,100,51.785],[341.8,100,51.785],[343.3,100,51.785],[345,100,51.785],[346.5,100,51.785],[348,100,51.785],[349.5,100,51.785],[351,100,51.785],[352.5,100,51.785],[354,100,51.785],[355.5,100,51.785],[357.3,100,51.785],[358.8,100,51.785]],"O":[[125.23,1.1,52.297],[137.75,2.04,51.842],[143.58,3.08,52.059],[145.58,3.62,52.041],[149.58,5.02,52.044],[155.18,8.12,51.925],[159.52,10.4,51.937],[168.12,15.06,51.923],[177.45,20.05,51.912],[188.88,30.25,51.874],[198.48,40.23,51.874],[207.75,50.12,51.888],[225.18,70.55,51.839],[242.45,90.35,51.801]],"reg":{"19:25|3.62":{"P":{"N":0.245,"NE":0.64,"CO":0.094,"SE":-0.07,"EX":-0.001,"S":-0.064},"N":{"N":0.206,"NE":0.579,"CO":0.062,"SE":-0.021,"EX":-0.001,"S":0.016},"Ps":0.844,"Ns":0.842},"19:29|5.02":{"P":{"N":0.239,"NE":0.608,"CO":0.077,"SE":0.101,"EX":-0.001,"S":-0.096},"N":{"N":0.164,"NE":0.558,"CO":0.044,"SE":0.096,"EX":-0.001,"S":-0.019},"Ps":0.927,"Ns":0.842},"19:39|10.4":{"P":{"N":0.171,"NE":0.452,"CO":0.027,"SE":-0.427,"EX":-0.001,"S":-0.101},"N":{"N":0.116,"NE":0.499,"CO":0.038,"SE":-0.33,"EX":-0.001,"S":-0.042},"Ps":0.12,"Ns":0.281},"19:57|20.05":{"P":{"N":0.1,"NE":0.282,"CO":-0.014,"SE":-0.729,"EX":-0.001,"S":-0.101},"N":{"N":0.096,"NE":0.398,"CO":0.021,"SE":-0.365,"EX":-0.001,"S":-0.051},"Ps":-0.463,"Ns":0.098},"20:08|30.25":{"P":{"N":0.047,"NE":0.123,"CO":0.006,"SE":-0.418,"EX":-0.001,"S":-0.049},"N":{"N":0.049,"NE":0.249,"CO":0.037,"SE":-0.117,"EX":-0.001,"S":-0.014},"Ps":-0.291,"Ns":0.202},"20:18|40.23":{"P":{"N":0.018,"NE":0.004,"CO":0.004,"SE":-0.311,"EX":-0.001,"S":-0.029},"N":{"N":0.028,"NE":0.152,"CO":0.028,"SE":-0.062,"EX":-0.001,"S":-0.011},"Ps":-0.315,"Ns":0.134}},"est":[["AC",30.8,33.43,144513,287715,0.81,0.39,1.22,0.93],["AL",57.5,60.77,1152621,744140,0.46,0.96,-0.35,0.03],["AM",51.74,54.02,1145783,975245,2.99,2.36,0.99,0.88],["AP",50.03,52.88,222968,198674,13.78,8.77,1.15,0.61],["BA",69.87,71.31,6485258,2608761,1.03,1.62,0.61,1.21],["CE",66.93,68.93,4036124,1819478,1.2,0.92,-0.37,0.46],["DF",42.62,45.72,825224,979542,-0.37,-0.5,-0.05,-0.09],["ES",40.8,43.63,1001965,1294504,-0.69,0.34,-0.53,0.07],["GO",36.69,40.34,1585555,2345334,-0.83,-0.13,0.02,0.73],["MA",67.44,69.54,2808231,1229971,3.85,3.42,0.63,0.88],["MG",47.32,50.43,6351099,6241786,-0.23,-0.22,-0.8,-0.47],["MS",37.18,40.4,628973,927892,0.07,0.61,-0.43,0.22],["MT",30.94,33.94,694167,1351099,3.47,2.57,0.71,0.75],["PA",52.87,55.02,2690449,2199940,1.33,0.75,-0.08,0.37],["PB",64.96,67.46,1794059,865210,0.5,0.72,0.13,0.2],["PE",67.16,69.2,4117513,1832554,2.47,2.4,1.44,1.51],["PI",74.66,75.88,1653989,525859,0.85,2.02,-0.09,0.94],["PR",34.24,37.42,2566504,4291444,-0.14,-0.14,-0.36,-0.03],["RJ",42.65,46.9,4565393,5169033,0.84,0.69,-2.95,-1.43],["RN",63.21,65.72,1413596,737409,1.61,1.7,0.99,1.05],["RO",27.74,30.39,294446,674382,1.87,1.45,1.41,0.97],["RR",24.34,27.54,83505,219675,0.92,0.77,6.23,3.37],["RS",39.1,42.16,2824552,3874378,-1.43,-0.81,-0.09,0.02],["SC",27.31,30.58,1418314,3220071,-0.63,0.07,-0.68,-0.43],["SE",67.2,69.53,989041,433354,1.18,1.33,-0.76,-0.12],["SP",42.38,46.15,12119274,14139178,-2.25,-1.79,-0.58,0.12],["TO",46.26,48.63,442962,467916,0.95,1.11,-0.13,0.08],["ZZ",52.24,53.86,200154,171497,-0.19,-0.18,-0.21,-0.21]],"swing":[{"h":"17:08:36","st":1225,"l2_2t":57.655,"l2_1t_mesmas":55.968,"swing":1.69,"tambemPrimeirasNo1t":20.5},{"h":"19:05:14","st":5511,"l2_2t":50.383,"l2_1t_mesmas":47.798,"swing":2.59,"tambemPrimeirasNo1t":43.3},{"h":"19:23:35","st":15388,"l2_2t":51.343,"l2_1t_mesmas":48.906,"swing":2.44,"tambemPrimeirasNo1t":48.3},{"h":"19:29:35","st":25057,"l2_2t":51.15,"l2_1t_mesmas":48.653,"swing":2.5,"tambemPrimeirasNo1t":51.8},{"h":"19:39:31","st":51922,"l2_2t":50.46,"l2_1t_mesmas":47.882,"swing":2.58,"tambemPrimeirasNo1t":57.3},{"h":"19:57:27","st":100108,"l2_2t":49.591,"l2_1t_mesmas":46.967,"swing":2.62,"tambemPrimeirasNo1t":62.3},{"h":"20:08:53","st":150999,"l2_2t":49.534,"l2_1t_mesmas":46.88,"swing":2.65,"tambemPrimeirasNo1t":65.4},{"h":"20:18:29","st":200864,"l2_2t":49.795,"l2_1t_mesmas":47.114,"swing":2.68,"tambemPrimeirasNo1t":68.3},{"h":"20:27:45","st":250244,"l2_2t":50.139,"l2_1t_mesmas":47.446,"swing":2.69,"tambemPrimeirasNo1t":70.7},{"h":"20:45:11","st":352224,"l2_2t":50.923,"l2_1t_mesmas":48.207,"swing":2.72,"tambemPrimeirasNo1t":79.9},{"h":"21:02:27","st":451080,"l2_2t":51.58,"l2_1t_mesmas":48.823,"swing":2.76,"tambemPrimeirasNo1t":92}],"cid":{"19:25:35":[["Paragominas",3,246,84.25,82.72,93.4,37.65,41.34],["Macapá",12,1027,80.04,78.1,61.95,47.86,50.99],["Teresina",6,1843,77.78,76.26,64.88,66.03,67.98],["Recife",4,3481,63.28,62.31,56.09,59.03,61.27]],"19:39:31":[["Paragominas",20,246,72.48,70.31,57.67,37.65,41.34],["Macapá",41,1027,65.62,63.88,62.86,47.86,50.99],["Teresina",35,1843,69.69,67.75,61.76,66.03,67.98],["Recife",68,3481,63.46,61.74,59.03,59.03,61.27],["Porto Seguro",37,323,64.01,61.68,59.17,53.04,56.35],["Rio de Janeiro",7,12635,42.92,38.48,38.39,47.84,51.54],["Santo André",4,1742,62.81,61.84,49.29,46.6,49.71],["São Paulo",19,26683,48.47,44.68,48.23,52.51,55.5]],"19:57:27":[["Paragominas",36,246,58.88,55.81,54.98,37.65,41.34],["Macapá",167,1027,54.73,52.39,52.48,47.86,50.99],["Teresina",41,1843,69.74,67.77,62.17,66.03,67.98],["Recife",105,3481,64.07,62.23,59.15,59.03,61.27],["Porto Seguro",68,323,61.64,59.1,52.3,53.04,56.35],["Rio de Janeiro",96,12635,44.15,39.7,44.8,47.84,51.54],["Santo André",4,1742,62.81,61.84,49.29,46.6,49.71],["São Paulo",190,26683,52.81,49.41,47.37,52.51,55.5]]},"pa":[{"l2t":65.026,"l1t":63.965,"A":22949,"B":12343},{"l2t":55.015,"l1t":52.867}],"ate":[[[60,65670],[90,170002],[120,291858],[180,424153],[240,490291]],[[60,1870],[90,1870],[120,1870],[125,7506],[130,8115],[150,27327],[180,111272],[240,440574],[300,499131],[400,499248]]]}</script>
+<script>
+(() => {
+  'use strict';
+  const D = JSON.parse(document.getElementById('dados').textContent);
+  const $ = id => document.getElementById(id);
+  const nf = d => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: d, maximumFractionDigits: d});
+  const P = (x, d = 1) => Number.isFinite(x) ? nf(d).format(x) : '—';
+  const I = x => nf(0).format(x);
+  const S = (x, d = 1) => { if (!Number.isFinite(x)) return '—'; const r = Math.round(x * 10 ** d) / 10 ** d; return (r > 0 ? '+' : r < 0 ? '−' : '') + nf(d).format(Math.abs(r)); };
+  const hora = m => { const t = Math.round(m * 60), h = 17 + Math.floor(t / 3600), mi = Math.floor(t / 60) % 60; return `${String(h % 24).padStart(2, '0')}h${String(mi).padStart(2, '0')}`; };
+  const FIM = D.final.l2, TOT = 499248;
+
+  // ---------- gráfico ----------
+  const SER = [
+    {id: 'bruta', nome: 'Contagem do TSE', cor: 'var(--s-bruta)', pts: D.P.filter(e => e[2] != null).map(e => [e[0], e[2], e[1]]), larg: 1.6},
+    {id: 'princ', nome: 'Página principal', cor: 'var(--s-princ)', pts: D.P.map(e => [e[0], e[3], e[1]]), larg: 2.2},
+    {id: 'nova', nome: 'Modelo novo', cor: 'var(--s-nova)', pts: D.N.map(e => [e[0], e[2], e[1]]), larg: 2.2},
+    {id: 'urnas', nome: 'Com as mesmas urnas (refeito depois)', cor: 'var(--s-urnas)', pts: D.O.map(e => [e[0], e[2], e[1]]), ponto: true}
+  ];
+  $('legenda').innerHTML = SER.map(s => `<span><i class="${s.ponto ? 'ponto' : ''}" style="background:${s.cor}"></i>${s.nome}</span>`).join('') + '<span><i class="banda"></i>Resultado final ± 0,3 ponto</span>';
+  const X0 = 120, X1 = 270, Y0 = 49, Y1 = 53;
+  const EV = [[144.6, 'princ'], [173.1, 'princ'], [180.7, 'nova'], [202.9, 'princ']];   // em ordem de horário
+  function desenhar() {
+    const el = $('grafico'), W = Math.max(300, el.clientWidth || 700), H = W < 520 ? 300 : 380;
+    const ml = 40, mr = 12, mt = 16, mb = 30;
+    const X = m => ml + (m - X0) * (W - ml - mr) / (X1 - X0), Y = v => mt + (Y1 - v) * (H - mt - mb) / (Y1 - Y0);
+    let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">`;
+    s += `<rect x="${ml}" y="${Y(FIM + 0.3)}" width="${W - ml - mr}" height="${Y(FIM - 0.3) - Y(FIM + 0.3)}" fill="var(--faixa)"/>`;
+    for (let v = Y0; v <= Y1 + 1e-9; v += 0.5) { const forte = Math.abs(v - 50) < 1e-9; s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${forte ? 1.4 : 1}"/>`; if (Number.isInteger(v)) s += `<text x="${ml - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`; }
+    s += `<text x="${W - mr}" y="${Y(50) - 5}" text-anchor="end" font-size="11" fill="var(--muted)">empate</text>`;
+    for (let m = X0; m <= X1; m += 30) s += `<line x1="${X(m)}" x2="${X(m)}" y1="${H - mb}" y2="${H - mb + 4}" stroke="var(--line)"/><text x="${X(m)}" y="${H - mb + 17}" text-anchor="middle" font-size="11" fill="var(--muted)">${hora(m)}</text>`;
+    s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(FIM)}" y2="${Y(FIM)}" stroke="var(--muted)" stroke-dasharray="5 4" stroke-width="1.4"/>`;
+    s += `<text x="${W - mr}" y="${Y(FIM + 0.3) - 5}" text-anchor="end" font-size="11" fill="var(--muted)">resultado: ${P(FIM, 2)}%</text>`;
+    for (const se of SER) {
+      const pts = se.pts.filter(p => p[0] >= X0 - 1 && p[0] <= X1 + 1);
+      if (se.ponto) { s += `<polyline points="${pts.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ')}" fill="none" stroke="${se.cor}" stroke-width="1.2" stroke-dasharray="3 3"/>`; for (const p of pts) s += `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="4.5" fill="${se.cor}" stroke="var(--panel)" stroke-width="2"/>`; }
+      else s += `<polyline points="${pts.map(p => `${X(p[0]).toFixed(1)},${Y(Math.max(Y0, Math.min(Y1, p[1]))).toFixed(1)}`).join(' ')}" fill="none" stroke="${se.cor}" stroke-width="${se.larg}" stroke-linejoin="round"/>`;
+    }
+    EV.forEach(([m, id], k) => {
+      const se = SER.find(x => x.id === id), p = se.pts.reduce((a, b) => Math.abs(b[0] - m) < Math.abs(a[0] - m) ? b : a);
+      const x = X(p[0]), y = Y(p[1]), ty = k === 1 ? y + 21 : y - 11;
+      s += `<circle cx="${x}" cy="${y}" r="5.5" fill="var(--panel)" stroke="${se.cor}" stroke-width="2.4"/>`;
+      s += `<text x="${x}" y="${ty}" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--fg)" stroke="var(--panel)" stroke-width="3" paint-order="stroke">${k + 1}</text>`;
+    });
+    s += `<line id="mira" x1="0" x2="0" y1="${mt}" y2="${H - mb}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>`;
+    s += `<rect id="area" x="${ml}" y="${mt}" width="${W - ml - mr}" height="${H - mt - mb}" fill="transparent"/>`;
+    el.innerHTML = s + '</svg><div class="dica" id="dica" hidden></div>';
+    const area = el.querySelector('#area'), mira = el.querySelector('#mira'), dica = el.querySelector('#dica');
+    const perto = (pts, m) => { let b = null; for (const p of pts) if (p[0] <= m + 0.01) b = p; else break; return b; };
+    function mover(ev) {
+      const r = el.getBoundingClientRect(), px = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+      const m = X0 + (px * (W / r.width) - ml) * (X1 - X0) / (W - ml - mr);
+      if (m < X0 || m > X1) return sair();
+      mira.setAttribute('x1', X(m)); mira.setAttribute('x2', X(m)); mira.setAttribute('visibility', 'visible');
+      const pr = perto(SER[1].pts, m), pn = perto(SER[2].pts, m), pb = perto(SER[0].pts, m);
+      if (!pr) return sair();
+      const lin = (se, p) => p ? `<div class="linha"><span><i style="background:${se.cor}"></i>${se.nome}</span><b>${P(p[1], 2)}%</b></div>` : '';
+      dica.innerHTML = `<div class="linha"><b>${hora(m)}</b><span class="m">${P(pr[2], 1)}% das urnas</span></div>${lin(SER[0], pb)}${lin(SER[1], pr)}${lin(SER[2], pn)}<div class="linha m"><span>Resultado final</span><b>${P(FIM, 2)}%</b></div>`;
+      dica.hidden = false;
+      const dx = px + 14 + 200 > r.width ? px - 214 : px + 14;
+      dica.style.left = Math.max(0, dx) + 'px'; dica.style.top = '8px';
+    }
+    function sair() { mira.setAttribute('visibility', 'hidden'); dica.hidden = true; }
+    area.addEventListener('mousemove', mover); area.addEventListener('mouseleave', sair);
+    area.addEventListener('touchstart', mover, {passive: true}); area.addEventListener('touchmove', mover, {passive: true}); area.addEventListener('touchend', sair);
+  }
+  desenhar();
+  let rz = 0; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(desenhar, 120); });
+
+  // tabela do gráfico: a cada marca de % apurado
+  const marcas = [1, 2, 3, 5, 8, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 95, 100];
+  const primeiro = (pts, pct) => pts.find(p => p[2] >= pct);
+  let tg = '<thead><tr><th>Urnas apuradas</th><th>Horário</th><th>Contagem do TSE</th><th>Página principal</th><th>Modelo novo</th><th>Com as mesmas urnas</th></tr></thead><tbody>';
+  for (const pct of marcas) {
+    const pr = primeiro(SER[1].pts, pct), pn = primeiro(SER[2].pts, pct), pb = primeiro(SER[0].pts, pct), pu = SER[3].pts.find(p => Math.abs(p[2] - pct) < 0.6);
+    if (!pr) continue;
+    tg += `<tr><td class="num">${P(pr[2], 1)}%</td><td class="num">${hora(pr[0])}</td><td class="num">${pb ? P(pb[1], 2) + '%' : '—'}</td><td class="num">${P(pr[1], 2)}%</td><td class="num">${pn ? P(pn[1], 2) + '%' : '—'}</td><td class="num">${pu ? P(pu[1], 2) + '%' : '—'}</td></tr>`;
+  }
+  $('tab-graf').innerHTML = tg + `</tbody>`;
+
+  // ---------- cidades ----------
+  const CIDS = [['19:25:35', 'Macapá', 'AP', 77.68, 71.82], ['19:39:31', 'São Paulo', 'SP', 48.85, 49.54], ['19:57:27', 'Rio de Janeiro', 'RJ', 44.36, 46.66]];
+  $('tab-cid').innerHTML = CIDS.map(([h, nome, uf, pp, pn]) => {
+    const c = D.cid[h].find(x => x[0] === nome);
+    return `<tr><td>${nome} <span class="m">${uf}</span></td><td class="num">${h.slice(0, 2)}h${h.slice(3, 5)}</td><td class="num">${I(c[1])} de ${I(c[2])}</td><td class="num">${P(c[3])}%</td><td class="num">${P(c[4])}%</td><td class="num">${P(c[6])}%</td><td class="num">${P(c[5])}%</td><td class="num">${P(pp)}%</td><td class="num">${P(pn)}%</td><td class="num"><b>${P(c[7])}%</b></td></tr>`;
+  }).join('');
+
+  // ---------- regiões ----------
+  const RG = [['N', 'Norte'], ['NE', 'Nordeste'], ['CO', 'Centro-Oeste'], ['SE', 'Sudeste'], ['S', 'Sul']];
+  const MOMS = Object.keys(D.reg);
+  for (const k of ['P', 'N']) {
+    $('cab-reg-' + k.toLowerCase()).innerHTML = '<tr><th>Região</th>' + MOMS.map(m => `<th>${m.slice(0, 2)}h${m.slice(3, 5)}<br><span style="text-transform:none;font-weight:500">${P(+m.split('|')[1], 0)}% das urnas</span></th>`).join('') + '</tr>';
+    $('tab-reg-' + k.toLowerCase()).innerHTML = RG.map(([r, nome]) => `<tr><td>${nome}</td>${MOMS.map(m => { const v = D.reg[m][k][r]; return `<td class="num ${Math.abs(v) >= 0.2 ? 'forte' : ''}">${S(v, 2)}</td>`; }).join('')}</tr>`).join('')
+      + `<tr class="destaque"><td><b>Brasil</b></td>${MOMS.map(m => `<td class="num"><b>${S(D.reg[m][k + 's'], 2)}</b></td>`).join('')}</tr>`;
+  }
+
+  // ---------- mesmas urnas ----------
+  $('tab-virada').innerHTML = D.swing.filter(v => v.h >= '19').map(v => `<tr><td class="num">${v.h.slice(0, 2)}h${v.h.slice(3, 5)}</td><td class="num">${P(100 * v.st / TOT, 1)}%</td><td class="num">${P(v.l2_2t, 1)}%</td><td class="num">${P(v.l2_1t_mesmas, 1)}%</td><td class="num"><b>${S(v.swing, 1)}</b></td></tr>`).join('')
+    + `<tr class="destaque"><td>Final</td><td class="num">100%</td><td class="num">${P(FIM, 1)}%</td><td class="num">${P(D.final.l1, 1)}%</td><td class="num"><b>${S(FIM - D.final.l1, 1)}</b></td></tr>`;
+  const [pa, paT] = D.pa;
+  $('pa-num').innerHTML = `${P(pa.l1t, 1)}% <span class="m" style="font-size:22px">→</span> ${P(pa.l2t, 1)}%`;
+  $('pa-txt').textContent = `As 179 urnas que o Pará tinha apurado às 17h06 deram ${P(pa.l2t, 1)}% a Lula no 2º turno. As mesmas urnas tinham dado ${P(pa.l1t, 1)}% no 1º turno: Lula ganhou ${P(pa.l2t - pa.l1t, 1)} ponto nelas, menos que no Pará inteiro, onde foi de ${P(paT.l1t, 1)}% para ${P(paT.l2t, 1)}% (${S(paT.l2t - paT.l1t, 1)}).`;
+
+  // ---------- estados ----------
+  const NOME = {AC: 'Acre', AL: 'Alagoas', AM: 'Amazonas', AP: 'Amapá', BA: 'Bahia', CE: 'Ceará', DF: 'Distrito Federal', ES: 'Espírito Santo', GO: 'Goiás', MA: 'Maranhão', MG: 'Minas Gerais', MS: 'Mato Grosso do Sul', MT: 'Mato Grosso', PA: 'Pará', PB: 'Paraíba', PE: 'Pernambuco', PI: 'Piauí', PR: 'Paraná', RJ: 'Rio de Janeiro', RN: 'Rio Grande do Norte', RO: 'Rondônia', RR: 'Roraima', RS: 'Rio Grande do Sul', SC: 'Santa Catarina', SE: 'Sergipe', SP: 'São Paulo', TO: 'Tocantins', ZZ: 'Exterior'};
+  const err = v => v == null ? '<td class="num m">—</td>' : `<td class="num ${Math.abs(v) >= 1 ? 'forte' : ''}">${S(v, 1)}</td>`;
+  $('tab-uf').innerHTML = D.est.slice().sort((a, b) => NOME[a[0]].localeCompare(NOME[b[0]], 'pt')).map(e => `<tr><td>${NOME[e[0]]} <span class="m">${e[0] === 'ZZ' ? '' : e[0]}</span></td><td class="num">${P(e[1])}%</td><td class="num">${P(e[2])}%</td><td class="num">${S(e[2] - e[1])}</td>${err(e[5])}${err(e[6])}${err(e[7])}${err(e[8])}</tr>`).join('');
+})();
+</script>
+
+</body>
+</html>
